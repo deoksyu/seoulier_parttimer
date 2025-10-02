@@ -8,7 +8,14 @@
     "build": "cd client && npm run build",
     "vercel-build": "cd client && npm install && npm run build"
   },
-  "keywords": ["attendance", "part-time", "management"],
+  "keywords": [
+    "attendance",
+    "part-time",
+    "management"
+  ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "pg": "^8.16.3"
+  }
 }
