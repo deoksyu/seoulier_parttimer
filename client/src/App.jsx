@@ -15,8 +15,9 @@ function App() {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
+  const [selectedStaff, setSelectedStaff] = useState('all');
 
-  // Load shifts when user logs in or month changes
+  // Load shifts when user logs in or month/staff changes
   useEffect(() => {
     if (user) {
       loadShifts();
@@ -24,7 +25,7 @@ function App() {
         loadStatistics();
       }
     }
-  }, [user, selectedMonth]);
+  }, [user, selectedMonth, selectedStaff]);
 
   // Login
   const handleLogin = async (e) => {
@@ -87,7 +88,8 @@ function App() {
         params: { 
           userId: user.id, 
           role: user.role,
-          month: selectedMonth 
+          month: selectedMonth,
+          staffId: selectedStaff
         }
       });
       if (response.data.success) {
@@ -327,7 +329,12 @@ function App() {
               </tr>
             ) : (
               statistics.map(stat => (
-                <tr key={stat.id}>
+                <tr 
+                  key={stat.id}
+                  onClick={() => setSelectedStaff(stat.id.toString())}
+                  className={selectedStaff === stat.id.toString() ? 'selected-row' : 'clickable-row'}
+                  style={{ cursor: 'pointer' }}
+                >
                   <td>{stat.name}</td>
                   <td>{stat.username}</td>
                   <td>{stat.shift_count || 0}일</td>
@@ -350,8 +357,24 @@ function App() {
       {/* 전체 근무 기록 */}
       <div className="shifts-section">
         <div className="section-header">
-          <h2>📋 전체 근무 기록</h2>
+          <h2>
+            📋 {selectedStaff === 'all' 
+              ? '전체 근무 기록' 
+              : `${statistics.find(s => s.id.toString() === selectedStaff)?.name || ''} 근무 기록`}
+          </h2>
           <div className="header-controls">
+            <select 
+              value={selectedStaff} 
+              onChange={(e) => setSelectedStaff(e.target.value)}
+              className="month-selector"
+            >
+              <option value="all">전체 알바생</option>
+              {statistics.map(stat => (
+                <option key={stat.id} value={stat.id}>
+                  {stat.name} ({stat.username})
+                </option>
+              ))}
+            </select>
             <select 
               value={selectedMonth} 
               onChange={(e) => setSelectedMonth(e.target.value)}

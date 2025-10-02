@@ -220,7 +220,7 @@ app.post('/api/clock-out', (req, res) => {
 
 // Get shifts
 app.get('/api/shifts', (req, res) => {
-  const { userId, role, month } = req.query;
+  const { userId, role, month, staffId } = req.query;
   
   let query = `
     SELECT s.*, u.name, u.username 
@@ -234,6 +234,10 @@ app.get('/api/shifts', (req, res) => {
   if (role === 'staff') {
     conditions.push('s.user_id = ?');
     params.push(userId);
+  } else if (role === 'admin' && staffId && staffId !== 'all') {
+    // Admin filtering by specific staff
+    conditions.push('s.user_id = ?');
+    params.push(staffId);
   }
   
   // Month filtering

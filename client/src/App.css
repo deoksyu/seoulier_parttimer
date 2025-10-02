@@ -257,6 +257,23 @@ tbody tr:hover {
   background: #f8f9fa;
 }
 
+.clickable-row {
+  transition: background-color 0.2s;
+}
+
+.clickable-row:hover {
+  background: #e3f2fd !important;
+}
+
+.selected-row {
+  background: #bbdefb !important;
+  font-weight: bold;
+}
+
+.selected-row:hover {
+  background: #90caf9 !important;
+}
+
 tfoot .total-row {
   background: #e9ecef;
   font-weight: bold;
