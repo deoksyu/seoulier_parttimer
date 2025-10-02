@@ -72,14 +72,14 @@ function initDatabase() {
           
           // 알바생 계정 8명
           const staffMembers = [
-            { username: 'staff01', password: 'staff01', name: '이수진' },
-            { username: 'staff02', password: 'staff02', name: '배경현' },
-            { username: 'staff03', password: 'staff03', name: '채윤아' },
-            { username: 'staff04', password: 'staff04', name: '황성윤' },
-            { username: 'staff05', password: 'staff05', name: '임수민' },
-            { username: 'staff06', password: 'staff06', name: '김태오' },
-            { username: 'staff07', password: 'staff07', name: '웅' },
-            { username: 'staff08', password: 'staff08', name: '김채원' }
+            { username: 'st01', password: 'st01', name: '이수진' },
+            { username: 'st02', password: 'st02', name: '배경현' },
+            { username: 'st03', password: 'st03', name: '채윤아' },
+            { username: 'st04', password: 'st04', name: '황성윤' },
+            { username: 'st05', password: 'st05', name: '임수민' },
+            { username: 'st06', password: 'st06', name: '김태오' },
+            { username: 'st07', password: 'st07', name: '웅' },
+            { username: 'st08', password: 'st08', name: '김채원' }
           ];
           
           staffMembers.forEach((staff, index) => {
@@ -91,7 +91,7 @@ function initDatabase() {
                 if (index === staffMembers.length - 1) {
                   console.log('✅ Test users created:');
                   console.log('   관리자: admin / admin');
-                  console.log('   알바생: staff01~staff08 / staff01~staff08');
+                  console.log('   알바생: st01~st08 / st01~st08');
                 }
               }
             );

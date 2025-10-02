@@ -134,9 +134,9 @@ function App() {
           <div className="test-accounts">
             <p><strong>테스트 계정:</strong></p>
             <p>👔 관리자: admin / admin</p>
-            <p>👤 알바생: staff01~staff08 / staff01~staff08</p>
+            <p>👤 알바생: st01~st08 / st01~st08</p>
             <p style={{fontSize: '11px', color: '#999', marginTop: '8px'}}>
-              예시: staff01 / staff01, staff02 / staff02 ...
+              예시: st01 / st01, st02 / st02 ...
             </p>
           </div>
         </div>
