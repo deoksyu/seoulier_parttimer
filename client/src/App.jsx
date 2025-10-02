@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+// 프로덕션에서는 /api, 개발에서는 localhost 사용
+const API_URL = import.meta.env.VITE_API_URL || 
+  (import.meta.env.MODE === 'production' ? '/api' : 'http://localhost:5001/api');
 
 function App() {
   const [user, setUser] = useState(null);
