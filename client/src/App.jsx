@@ -132,9 +132,12 @@ function App() {
           </form>
           {message && <div className="message">{message}</div>}
           <div className="test-accounts">
-            <p>테스트 계정:</p>
-            <p>관리자: admin / admin</p>
-            <p>알바생: staff01 / staff</p>
+            <p><strong>테스트 계정:</strong></p>
+            <p>👔 관리자: admin / admin</p>
+            <p>👤 알바생: staff01~staff08 / staff01~staff08</p>
+            <p style={{fontSize: '11px', color: '#999', marginTop: '8px'}}>
+              예시: staff01 / staff01, staff02 / staff02 ...
+            </p>
           </div>
         </div>
       </div>

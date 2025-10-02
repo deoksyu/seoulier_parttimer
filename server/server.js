@@ -65,13 +65,36 @@ function initDatabase() {
         
         // Insert test users only if they don't exist
         if (!row) {
+          // 관리자 계정
           db.run(`INSERT INTO users (username, password, name, role) VALUES ('admin', 'admin', '관리자', 'admin')`, (err) => {
             if (err) console.error('Error inserting admin:', err);
           });
           
-          db.run(`INSERT INTO users (username, password, name, role) VALUES ('staff01', 'staff', '김철수', 'staff')`, (err) => {
-            if (err) console.error('Error inserting staff:', err);
-            else console.log('✅ Test users created: admin/admin, staff01/staff');
+          // 알바생 계정 8명
+          const staffMembers = [
+            { username: 'staff01', password: 'staff01', name: '김철수' },
+            { username: 'staff02', password: 'staff02', name: '이영희' },
+            { username: 'staff03', password: 'staff03', name: '박민수' },
+            { username: 'staff04', password: 'staff04', name: '정수진' },
+            { username: 'staff05', password: 'staff05', name: '최지훈' },
+            { username: 'staff06', password: 'staff06', name: '강미영' },
+            { username: 'staff07', password: 'staff07', name: '윤서연' },
+            { username: 'staff08', password: 'staff08', name: '임동현' }
+          ];
+          
+          staffMembers.forEach((staff, index) => {
+            db.run(
+              `INSERT INTO users (username, password, name, role) VALUES (?, ?, ?, 'staff')`,
+              [staff.username, staff.password, staff.name],
+              (err) => {
+                if (err) console.error(`Error inserting ${staff.username}:`, err);
+                if (index === staffMembers.length - 1) {
+                  console.log('✅ Test users created:');
+                  console.log('   관리자: admin / admin');
+                  console.log('   알바생: staff01~staff08 / staff01~staff08');
+                }
+              }
+            );
           });
         } else {
           console.log('✅ Database already initialized');
