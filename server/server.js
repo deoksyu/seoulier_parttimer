@@ -72,14 +72,14 @@ function initDatabase() {
           
           // 알바생 계정 8명
           const staffMembers = [
-            { username: 'staff01', password: 'staff01', name: '김철수' },
-            { username: 'staff02', password: 'staff02', name: '이영희' },
-            { username: 'staff03', password: 'staff03', name: '박민수' },
-            { username: 'staff04', password: 'staff04', name: '정수진' },
-            { username: 'staff05', password: 'staff05', name: '최지훈' },
-            { username: 'staff06', password: 'staff06', name: '강미영' },
-            { username: 'staff07', password: 'staff07', name: '윤서연' },
-            { username: 'staff08', password: 'staff08', name: '임동현' }
+            { username: 'staff01', password: 'staff01', name: '이수진' },
+            { username: 'staff02', password: 'staff02', name: '배경현' },
+            { username: 'staff03', password: 'staff03', name: '채윤아' },
+            { username: 'staff04', password: 'staff04', name: '황성윤' },
+            { username: 'staff05', password: 'staff05', name: '임수민' },
+            { username: 'staff06', password: 'staff06', name: '김태오' },
+            { username: 'staff07', password: 'staff07', name: '웅' },
+            { username: 'staff08', password: 'staff08', name: '김채원' }
           ];
           
           staffMembers.forEach((staff, index) => {
