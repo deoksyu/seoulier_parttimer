@@ -276,6 +276,41 @@ app.put('/api/shifts/:id/approve', (req, res) => {
   });
 });
 
+// Get statistics by user
+app.get('/api/statistics', (req, res) => {
+  const { month } = req.query;
+  
+  let query = `
+    SELECT 
+      u.id,
+      u.name,
+      u.username,
+      COUNT(s.id) as shift_count,
+      SUM(CASE WHEN s.work_hours IS NOT NULL THEN s.work_hours ELSE 0 END) as total_hours,
+      SUM(CASE WHEN s.status = 'approved' THEN 1 ELSE 0 END) as approved_count
+    FROM users u
+    LEFT JOIN shifts s ON u.id = s.user_id
+    WHERE u.role = 'staff'
+  `;
+  
+  if (month) {
+    query += ` AND s.date LIKE '${month}%'`;
+  }
+  
+  query += ' GROUP BY u.id, u.name, u.username ORDER BY u.id';
+  
+  db.all(query, [], (err, stats) => {
+    if (err) {
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+    
+    res.json({
+      success: true,
+      statistics: stats
+    });
+  });
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

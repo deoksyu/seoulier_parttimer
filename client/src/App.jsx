@@ -9,6 +9,7 @@ function App() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [shifts, setShifts] = useState([]);
+  const [statistics, setStatistics] = useState([]);
   const [message, setMessage] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
@@ -19,6 +20,9 @@ function App() {
   useEffect(() => {
     if (user) {
       loadShifts();
+      if (user.role === 'admin') {
+        loadStatistics();
+      }
     }
   }, [user, selectedMonth]);
 
@@ -91,6 +95,20 @@ function App() {
       }
     } catch (error) {
       console.error('Failed to load shifts:', error);
+    }
+  };
+
+  // Load statistics (admin only)
+  const loadStatistics = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/statistics`, {
+        params: { month: selectedMonth }
+      });
+      if (response.data.success) {
+        setStatistics(response.data.statistics);
+      }
+    } catch (error) {
+      console.error('Failed to load statistics:', error);
     }
   };
 
@@ -270,6 +288,66 @@ function App() {
       
       {message && <div className="message success">{message}</div>}
       
+      {/* 인원별 근무시간 통계 */}
+      <div className="shifts-section">
+        <div className="section-header">
+          <h2>📊 인원별 근무시간</h2>
+          <div className="header-controls">
+            <select 
+              value={selectedMonth} 
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="month-selector"
+            >
+              <option value="2025-10">2025년 10월</option>
+              <option value="2025-09">2025년 9월</option>
+              <option value="2025-08">2025년 8월</option>
+              <option value="2025-07">2025년 7월</option>
+              <option value="2025-06">2025년 6월</option>
+              <option value="2025-05">2025년 5월</option>
+            </select>
+            <button onClick={handlePrint} className="btn-print">
+              🖨️ 인쇄/PDF
+            </button>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>이름</th>
+              <th>아이디</th>
+              <th>총 근무일수</th>
+              <th>총 근무시간</th>
+              <th>승인 완료</th>
+            </tr>
+          </thead>
+          <tbody>
+            {statistics.length === 0 ? (
+              <tr>
+                <td colSpan="5">통계 데이터가 없습니다</td>
+              </tr>
+            ) : (
+              statistics.map(stat => (
+                <tr key={stat.id}>
+                  <td>{stat.name}</td>
+                  <td>{stat.username}</td>
+                  <td>{stat.shift_count || 0}일</td>
+                  <td><strong>{stat.total_hours || 0}시간</strong></td>
+                  <td>{stat.approved_count || 0}건</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+          <tfoot>
+            <tr className="total-row">
+              <td colSpan="3"><strong>전체 합계</strong></td>
+              <td><strong>{statistics.reduce((sum, stat) => sum + (stat.total_hours || 0), 0)}시간</strong></td>
+              <td>{statistics.reduce((sum, stat) => sum + (stat.approved_count || 0), 0)}건</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      {/* 전체 근무 기록 */}
       <div className="shifts-section">
         <div className="section-header">
           <h2>📋 전체 근무 기록</h2>
