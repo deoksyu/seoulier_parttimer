@@ -115,6 +115,18 @@ function App() {
     return shifts.some(shift => shift.date === today && !shift.end_time);
   };
 
+  // Print monthly report
+  const handlePrint = () => {
+    window.print();
+  };
+
+  // Calculate total hours for the month
+  const calculateTotalHours = () => {
+    return shifts
+      .filter(shift => shift.work_hours)
+      .reduce((total, shift) => total + shift.work_hours, 0);
+  };
+
   // Login Screen
   if (!user) {
     return (
@@ -186,18 +198,23 @@ function App() {
         <div className="shifts-section">
           <div className="section-header">
             <h2>📊 내 근무 내역</h2>
-            <select 
-              value={selectedMonth} 
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="month-selector"
-            >
-              <option value="2025-10">2025년 10월</option>
-              <option value="2025-09">2025년 9월</option>
-              <option value="2025-08">2025년 8월</option>
-              <option value="2025-07">2025년 7월</option>
-              <option value="2025-06">2025년 6월</option>
-              <option value="2025-05">2025년 5월</option>
-            </select>
+            <div className="header-controls">
+              <select 
+                value={selectedMonth} 
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="month-selector"
+              >
+                <option value="2025-10">2025년 10월</option>
+                <option value="2025-09">2025년 9월</option>
+                <option value="2025-08">2025년 8월</option>
+                <option value="2025-07">2025년 7월</option>
+                <option value="2025-06">2025년 6월</option>
+                <option value="2025-05">2025년 5월</option>
+              </select>
+              <button onClick={handlePrint} className="btn-print">
+                🖨️ 인쇄/PDF
+              </button>
+            </div>
           </div>
           <table>
             <thead>
@@ -230,6 +247,13 @@ function App() {
                 ))
               )}
             </tbody>
+            <tfoot>
+              <tr className="total-row">
+                <td colSpan="3"><strong>월 합계</strong></td>
+                <td><strong>{calculateTotalHours()}시간</strong></td>
+                <td></td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </div>
@@ -249,18 +273,23 @@ function App() {
       <div className="shifts-section">
         <div className="section-header">
           <h2>📋 전체 근무 기록</h2>
-          <select 
-            value={selectedMonth} 
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="month-selector"
-          >
-            <option value="2025-10">2025년 10월</option>
-            <option value="2025-09">2025년 9월</option>
-            <option value="2025-08">2025년 8월</option>
-            <option value="2025-07">2025년 7월</option>
-            <option value="2025-06">2025년 6월</option>
-            <option value="2025-05">2025년 5월</option>
-          </select>
+          <div className="header-controls">
+            <select 
+              value={selectedMonth} 
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="month-selector"
+            >
+              <option value="2025-10">2025년 10월</option>
+              <option value="2025-09">2025년 9월</option>
+              <option value="2025-08">2025년 8월</option>
+              <option value="2025-07">2025년 7월</option>
+              <option value="2025-06">2025년 6월</option>
+              <option value="2025-05">2025년 5월</option>
+            </select>
+            <button onClick={handlePrint} className="btn-print">
+              🖨️ 인쇄/PDF
+            </button>
+          </div>
         </div>
         <table>
           <thead>
