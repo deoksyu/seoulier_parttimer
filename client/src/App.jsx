@@ -431,7 +431,7 @@ function App() {
               <th>아이디</th>
               <th>총 근무일수</th>
               <th>총 근무시간</th>
-              <th>승인 완료</th>
+              <th>승인 완료 시간</th>
             </tr>
           </thead>
           <tbody>
@@ -451,7 +451,7 @@ function App() {
                   <td>{stat.username}</td>
                   <td>{stat.shift_count || 0}일</td>
                   <td><strong>{stat.total_hours || 0}시간</strong></td>
-                  <td>{stat.approved_count || 0}건</td>
+                  <td><strong>{stat.approved_hours || 0}시간</strong></td>
                 </tr>
               ))
             )}
@@ -460,7 +460,7 @@ function App() {
             <tr className="total-row">
               <td colSpan="3"><strong>전체 합계</strong></td>
               <td><strong>{statistics.reduce((sum, stat) => sum + (stat.total_hours || 0), 0)}시간</strong></td>
-              <td>{statistics.reduce((sum, stat) => sum + (stat.approved_count || 0), 0)}건</td>
+              <td><strong>{statistics.reduce((sum, stat) => sum + (stat.approved_hours || 0), 0)}시간</strong></td>
             </tr>
           </tfoot>
         </table>

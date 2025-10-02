@@ -277,7 +277,7 @@ app.get('/api/statistics', async (req, res) => {
         u.username,
         COUNT(s.id) as shift_count,
         COALESCE(SUM(CASE WHEN s.work_hours IS NOT NULL THEN s.work_hours ELSE 0 END), 0) as total_hours,
-        COUNT(CASE WHEN s.status = 'approved' THEN 1 END) as approved_count
+        COALESCE(SUM(CASE WHEN s.status = 'approved' AND s.work_hours IS NOT NULL THEN s.work_hours ELSE 0 END), 0) as approved_hours
       FROM users u
       LEFT JOIN shifts s ON u.id = s.user_id
       WHERE u.role = 'staff'
