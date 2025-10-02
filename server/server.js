@@ -4,27 +4,28 @@ const cors = require('cors');
 const path = require('path');
 
 const app = express();
-const PORT = 5000;
+const PORT = 5001;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
 // Database setup
-const db = new sqlite3.Database(':memory:', (err) => {
+const dbPath = process.env.DATABASE_PATH || './database.db';
+const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Database connection error:', err);
   } else {
-    console.log('Connected to SQLite database');
+    console.log('Connected to SQLite database:', dbPath);
     initDatabase();
   }
 });
 
 // Initialize database
 function initDatabase() {
-  // Create users table
+  // Create users table if not exists
   db.run(`
-    CREATE TABLE users (
+    CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
@@ -37,14 +38,15 @@ function initDatabase() {
       return;
     }
     
-    // Create shifts table after users table is created
+    // Create shifts table if not exists
     db.run(`
-      CREATE TABLE shifts (
+      CREATE TABLE IF NOT EXISTS shifts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
         date TEXT NOT NULL,
         start_time TEXT NOT NULL,
         end_time TEXT,
+        work_hours REAL,
         status TEXT DEFAULT 'pending',
         FOREIGN KEY (user_id) REFERENCES users(id)
       )
@@ -54,14 +56,26 @@ function initDatabase() {
         return;
       }
       
-      // Insert test users after tables are created
-      db.run(`INSERT INTO users (username, password, name, role) VALUES ('admin', 'admin', '관리자', 'admin')`, (err) => {
-        if (err) console.error('Error inserting admin:', err);
-      });
-      
-      db.run(`INSERT INTO users (username, password, name, role) VALUES ('staff01', 'staff', '김철수', 'staff')`, (err) => {
-        if (err) console.error('Error inserting staff:', err);
-        else console.log('✅ Test users created: admin/admin, staff01/staff');
+      // Check if admin user exists
+      db.get('SELECT * FROM users WHERE username = ?', ['admin'], (err, row) => {
+        if (err) {
+          console.error('Error checking admin:', err);
+          return;
+        }
+        
+        // Insert test users only if they don't exist
+        if (!row) {
+          db.run(`INSERT INTO users (username, password, name, role) VALUES ('admin', 'admin', '관리자', 'admin')`, (err) => {
+            if (err) console.error('Error inserting admin:', err);
+          });
+          
+          db.run(`INSERT INTO users (username, password, name, role) VALUES ('staff01', 'staff', '김철수', 'staff')`, (err) => {
+            if (err) console.error('Error inserting staff:', err);
+            else console.log('✅ Test users created: admin/admin, staff01/staff');
+          });
+        } else {
+          console.log('✅ Database already initialized');
+        }
       });
     });
   });
@@ -127,6 +141,24 @@ app.post('/api/clock-in', (req, res) => {
   });
 });
 
+// Calculate work hours
+function calculateWorkHours(startTime, endTime) {
+  const [startHour, startMin] = startTime.split(':').map(Number);
+  const [endHour, endMin] = endTime.split(':').map(Number);
+  
+  const startMinutes = startHour * 60 + startMin;
+  const endMinutes = endHour * 60 + endMin;
+  const diffMinutes = endMinutes - startMinutes;
+  
+  const hours = Math.floor(diffMinutes / 60);
+  const minutes = diffMinutes % 60;
+  
+  // 30분 기준 반올림 (0-29분 = 0, 30-59분 = 0.5)
+  const roundedMinutes = minutes >= 30 ? 0.5 : 0;
+  
+  return hours + roundedMinutes;
+}
+
 // Clock out
 app.post('/api/clock-out', (req, res) => {
   const { userId } = req.body;
@@ -142,7 +174,9 @@ app.post('/api/clock-out', (req, res) => {
       return res.status(400).json({ success: false, message: '출근 기록이 없습니다' });
     }
     
-    db.run('UPDATE shifts SET end_time = ? WHERE id = ?', [time, shift.id], (err) => {
+    const workHours = calculateWorkHours(shift.start_time, time);
+    
+    db.run('UPDATE shifts SET end_time = ?, work_hours = ? WHERE id = ?', [time, workHours, shift.id], (err) => {
       if (err) {
         return res.status(500).json({ success: false, message: 'Database error' });
       }
@@ -153,7 +187,8 @@ app.post('/api/clock-out', (req, res) => {
           id: shift.id,
           date: shift.date,
           start_time: shift.start_time,
-          end_time: time
+          end_time: time,
+          work_hours: workHours
         }
       });
     });

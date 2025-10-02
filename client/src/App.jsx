@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'http://localhost:5001/api';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -180,13 +180,14 @@ function App() {
                 <th>날짜</th>
                 <th>출근 시간</th>
                 <th>퇴근 시간</th>
+                <th>근무 시간</th>
                 <th>상태</th>
               </tr>
             </thead>
             <tbody>
               {shifts.length === 0 ? (
                 <tr>
-                  <td colSpan="4">근무 내역이 없습니다</td>
+                  <td colSpan="5">근무 내역이 없습니다</td>
                 </tr>
               ) : (
                 shifts.map(shift => (
@@ -194,6 +195,7 @@ function App() {
                     <td>{shift.date}</td>
                     <td>{shift.start_time}</td>
                     <td>{shift.end_time || '-'}</td>
+                    <td>{shift.work_hours ? `${shift.work_hours}시간` : '-'}</td>
                     <td>
                       <span className={`status ${shift.status}`}>
                         {shift.status === 'approved' ? '✅ 승인' : '⏳ 대기'}
@@ -228,6 +230,7 @@ function App() {
               <th>날짜</th>
               <th>출근 시간</th>
               <th>퇴근 시간</th>
+              <th>근무 시간</th>
               <th>상태</th>
               <th>관리</th>
             </tr>
@@ -235,7 +238,7 @@ function App() {
           <tbody>
             {shifts.length === 0 ? (
               <tr>
-                <td colSpan="6">근무 기록이 없습니다</td>
+                <td colSpan="7">근무 기록이 없습니다</td>
               </tr>
             ) : (
               shifts.map(shift => (
@@ -244,6 +247,7 @@ function App() {
                   <td>{shift.date}</td>
                   <td>{shift.start_time}</td>
                   <td>{shift.end_time || '-'}</td>
+                  <td>{shift.work_hours ? `${shift.work_hours}시간` : '-'}</td>
                   <td>
                     <span className={`status ${shift.status}`}>
                       {shift.status === 'approved' ? '✅ 승인' : '⏳ 대기'}
