@@ -38,14 +38,19 @@ function calculateWorkHours(startTime, endTime) {
 // Login
 app.post('/api/login', async (req, res) => {
   try {
+    console.log('Login attempt:', req.body);
     const { username, password } = req.body;
     
+    console.log('Querying database for user:', username);
     const result = await db.query(
       'SELECT * FROM users WHERE username = $1 AND password = $2',
       [username, password]
     );
     
+    console.log('Query result rows:', result.rows.length);
+    
     if (result.rows.length === 0) {
+      console.log('Login failed: User not found');
       return res.status(401).json({ 
         success: false, 
         message: '아이디 또는 비밀번호가 잘못되었습니다' 
@@ -53,6 +58,7 @@ app.post('/api/login', async (req, res) => {
     }
     
     const user = result.rows[0];
+    console.log('Login successful for user:', user.username);
     res.json({
       success: true,
       user: {
@@ -64,7 +70,13 @@ app.post('/api/login', async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ success: false, message: 'Database error' });
+    console.error('Error details:', error.message);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Database error',
+      error: error.message 
+    });
   }
 });
 
