@@ -1,7 +1,6 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
-const path = require('path');
+const db = require('./db');
 
 const app = express();
 
@@ -9,105 +8,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Database setup - use /tmp for Vercel
-const dbPath = '/tmp/database.db';
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Database connection error:', err);
-  } else {
-    console.log('Connected to SQLite database:', dbPath);
-    initDatabase();
-  }
-});
-
-// Initialize database
-function initDatabase() {
-  // Create users table if not exists
-  db.run(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      name TEXT NOT NULL,
-      role TEXT NOT NULL
-    )
-  `, (err) => {
-    if (err) {
-      console.error('Error creating users table:', err);
-      return;
-    }
-    
-    // Create shifts table if not exists
-    db.run(`
-      CREATE TABLE IF NOT EXISTS shifts (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        date TEXT NOT NULL,
-        start_time TEXT NOT NULL,
-        end_time TEXT,
-        work_hours REAL,
-        status TEXT DEFAULT 'pending',
-        is_modified INTEGER DEFAULT 0,
-        FOREIGN KEY (user_id) REFERENCES users(id)
-      )
-    `, (err) => {
-      if (err) {
-        console.error('Error creating shifts table:', err);
-        return;
-      }
-      
-      // Add is_modified column if it doesn't exist (for existing databases)
-      db.run(`ALTER TABLE shifts ADD COLUMN is_modified INTEGER DEFAULT 0`, (err) => {
-        // Ignore error if column already exists
-      });
-      
-      // Check if admin user exists
-      db.get('SELECT * FROM users WHERE username = ?', ['admin'], (err, row) => {
-        if (err) {
-          console.error('Error checking admin:', err);
-          return;
-        }
-        
-        // Insert test users only if they don't exist
-        if (!row) {
-          // 관리자 계정
-          db.run(`INSERT INTO users (username, password, name, role) VALUES ('admin', 'admin', '관리자', 'admin')`, (err) => {
-            if (err) console.error('Error inserting admin:', err);
-          });
-          
-          // 알바생 계정 8명
-          const staffMembers = [
-            { username: 'st01', password: 'st01', name: '이수진' },
-            { username: 'st02', password: 'st02', name: '배경현' },
-            { username: 'st03', password: 'st03', name: '채윤아' },
-            { username: 'st04', password: 'st04', name: '황성윤' },
-            { username: 'st05', password: 'st05', name: '임수민' },
-            { username: 'st06', password: 'st06', name: '김태오' },
-            { username: 'st07', password: 'st07', name: '웅' },
-            { username: 'st08', password: 'st08', name: '김채원' }
-          ];
-          
-          staffMembers.forEach((staff, index) => {
-            db.run(
-              `INSERT INTO users (username, password, name, role) VALUES (?, ?, ?, 'staff')`,
-              [staff.username, staff.password, staff.name],
-              (err) => {
-                if (err) console.error(`Error inserting ${staff.username}:`, err);
-                if (index === staffMembers.length - 1) {
-                  console.log('✅ Test users created');
-                }
-              }
-            );
-          });
-        } else {
-          console.log('✅ Database already initialized');
-        }
-      });
-    });
-  });
-}
-
-// Calculate work hours
+// Calculate work hours with break time deduction
 function calculateWorkHours(startTime, endTime) {
   const [startHour, startMin] = startTime.split(':').map(Number);
   const [endHour, endMin] = endTime.split(':').map(Number);
@@ -116,45 +17,42 @@ function calculateWorkHours(startTime, endTime) {
   const endMinutes = endHour * 60 + endMin;
   let diffMinutes = endMinutes - startMinutes;
   
-  // 휴게시간 15:00~17:00 (900분~1020분) 체크
-  const breakStart = 15 * 60; // 900분 (15:00)
-  const breakEnd = 17 * 60;   // 1020분 (17:00)
+  // 휴게시간 15:00~17:00 체크
+  const breakStart = 15 * 60;
+  const breakEnd = 17 * 60;
   
-  // 근무 시간이 휴게시간과 겹치는지 확인
   if (startMinutes < breakEnd && endMinutes > breakStart) {
-    // 휴게시간이 근무 시간에 포함됨
     const overlapStart = Math.max(startMinutes, breakStart);
     const overlapEnd = Math.min(endMinutes, breakEnd);
     const overlapMinutes = overlapEnd - overlapStart;
-    
-    // 겹치는 휴게시간만큼 차감
     diffMinutes -= overlapMinutes;
   }
   
   const hours = Math.floor(diffMinutes / 60);
   const minutes = diffMinutes % 60;
-  
-  // 30분 기준 반올림 (0-29분 = 0, 30-59분 = 0.5)
   const roundedMinutes = minutes >= 30 ? 0.5 : 0;
   
   return hours + roundedMinutes;
 }
 
-// API Routes
-
 // Login
-app.post('/api/login', (req, res) => {
-  const { username, password } = req.body;
-  
-  db.get('SELECT * FROM users WHERE username = ? AND password = ?', [username, password], (err, user) => {
-    if (err) {
-      return res.status(500).json({ success: false, message: 'Database error' });
+app.post('/api/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    const result = await db.query(
+      'SELECT * FROM users WHERE username = $1 AND password = $2',
+      [username, password]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(401).json({ 
+        success: false, 
+        message: '아이디 또는 비밀번호가 잘못되었습니다' 
+      });
     }
     
-    if (!user) {
-      return res.status(401).json({ success: false, message: '아이디 또는 비밀번호가 잘못되었습니다' });
-    }
-    
+    const user = result.rows[0];
     res.json({
       success: true,
       user: {
@@ -164,210 +62,233 @@ app.post('/api/login', (req, res) => {
         role: user.role
       }
     });
-  });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ success: false, message: 'Database error' });
+  }
 });
 
 // Clock in
-app.post('/api/clock-in', (req, res) => {
-  const { userId } = req.body;
-  const date = new Date().toISOString().split('T')[0];
-  const time = new Date().toLocaleTimeString('ko-KR', { hour12: false });
-  
-  // Check if already clocked in today
-  db.get('SELECT * FROM shifts WHERE user_id = ? AND date = ? AND end_time IS NULL', [userId, date], (err, shift) => {
-    if (err) {
-      return res.status(500).json({ success: false, message: 'Database error' });
-    }
+app.post('/api/clock-in', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const date = new Date().toISOString().split('T')[0];
+    const time = new Date().toLocaleTimeString('ko-KR', { hour12: false });
     
-    if (shift) {
-      return res.status(400).json({ success: false, message: '이미 출근 처리되었습니다' });
-    }
+    // Check if already clocked in today
+    const checkResult = await db.query(
+      'SELECT * FROM shifts WHERE user_id = $1 AND date = $2 AND end_time IS NULL',
+      [userId, date]
+    );
     
-    db.run('INSERT INTO shifts (user_id, date, start_time) VALUES (?, ?, ?)', [userId, date, time], function(err) {
-      if (err) {
-        return res.status(500).json({ success: false, message: 'Database error' });
-      }
-      
-      res.json({
-        success: true,
-        shift: {
-          id: this.lastID,
-          date,
-          start_time: time
-        }
+    if (checkResult.rows.length > 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '이미 출근 처리되었습니다' 
       });
-    });
-  });
-});
-
-// Clock out
-app.post('/api/clock-out', (req, res) => {
-  const { userId } = req.body;
-  const date = new Date().toISOString().split('T')[0];
-  const time = new Date().toLocaleTimeString('ko-KR', { hour12: false });
-  
-  db.get('SELECT * FROM shifts WHERE user_id = ? AND date = ? AND end_time IS NULL', [userId, date], (err, shift) => {
-    if (err) {
-      return res.status(500).json({ success: false, message: 'Database error' });
     }
     
-    if (!shift) {
-      return res.status(400).json({ success: false, message: '출근 기록이 없습니다' });
-    }
-    
-    const workHours = calculateWorkHours(shift.start_time, time);
-    
-    db.run('UPDATE shifts SET end_time = ?, work_hours = ? WHERE id = ?', [time, workHours, shift.id], (err) => {
-      if (err) {
-        return res.status(500).json({ success: false, message: 'Database error' });
-      }
-      
-      res.json({
-        success: true,
-        shift: {
-          id: shift.id,
-          date: shift.date,
-          start_time: shift.start_time,
-          end_time: time,
-          work_hours: workHours
-        }
-      });
-    });
-  });
-});
-
-// Get shifts
-app.get('/api/shifts', (req, res) => {
-  const { userId, role, month, staffId } = req.query;
-  
-  let query = `
-    SELECT s.*, u.name, u.username 
-    FROM shifts s 
-    JOIN users u ON s.user_id = u.id
-  `;
-  let params = [];
-  let conditions = [];
-  
-  // Role-based filtering
-  if (role === 'staff') {
-    conditions.push('s.user_id = ?');
-    params.push(userId);
-  } else if (role === 'admin' && staffId && staffId !== 'all') {
-    // Admin filtering by specific staff
-    conditions.push('s.user_id = ?');
-    params.push(staffId);
-  }
-  
-  // Month filtering
-  if (month) {
-    conditions.push('s.date LIKE ?');
-    params.push(`${month}%`);
-  }
-  
-  if (conditions.length > 0) {
-    query += ' WHERE ' + conditions.join(' AND ');
-  }
-  
-  query += ' ORDER BY s.date DESC, s.start_time DESC';
-  
-  db.all(query, params, (err, shifts) => {
-    if (err) {
-      return res.status(500).json({ success: false, message: 'Database error' });
-    }
+    const result = await db.query(
+      'INSERT INTO shifts (user_id, date, start_time) VALUES ($1, $2, $3) RETURNING id',
+      [userId, date, time]
+    );
     
     res.json({
       success: true,
-      shifts
+      shift: {
+        id: result.rows[0].id,
+        date,
+        start_time: time
+      }
     });
-  });
+  } catch (error) {
+    console.error('Clock in error:', error);
+    res.status(500).json({ success: false, message: 'Database error' });
+  }
+});
+
+// Clock out
+app.post('/api/clock-out', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const date = new Date().toISOString().split('T')[0];
+    const time = new Date().toLocaleTimeString('ko-KR', { hour12: false });
+    
+    const result = await db.query(
+      'SELECT * FROM shifts WHERE user_id = $1 AND date = $2 AND end_time IS NULL',
+      [userId, date]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '출근 기록이 없습니다' 
+      });
+    }
+    
+    const shift = result.rows[0];
+    const workHours = calculateWorkHours(shift.start_time, time);
+    
+    await db.query(
+      'UPDATE shifts SET end_time = $1, work_hours = $2 WHERE id = $3',
+      [time, workHours, shift.id]
+    );
+    
+    res.json({
+      success: true,
+      shift: {
+        id: shift.id,
+        date: shift.date,
+        start_time: shift.start_time,
+        end_time: time,
+        work_hours: workHours
+      }
+    });
+  } catch (error) {
+    console.error('Clock out error:', error);
+    res.status(500).json({ success: false, message: 'Database error' });
+  }
+});
+
+// Get shifts
+app.get('/api/shifts', async (req, res) => {
+  try {
+    const { userId, role, month, staffId } = req.query;
+    
+    let query = `
+      SELECT s.*, u.name, u.username 
+      FROM shifts s 
+      JOIN users u ON s.user_id = u.id
+    `;
+    let params = [];
+    let conditions = [];
+    let paramIndex = 1;
+    
+    if (role === 'staff') {
+      conditions.push(`s.user_id = $${paramIndex++}`);
+      params.push(userId);
+    } else if (role === 'admin' && staffId && staffId !== 'all') {
+      conditions.push(`s.user_id = $${paramIndex++}`);
+      params.push(staffId);
+    }
+    
+    if (month) {
+      conditions.push(`s.date LIKE $${paramIndex++}`);
+      params.push(`${month}%`);
+    }
+    
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+    
+    query += ' ORDER BY s.date DESC, s.start_time DESC';
+    
+    const result = await db.query(query, params);
+    
+    res.json({
+      success: true,
+      shifts: result.rows
+    });
+  } catch (error) {
+    console.error('Get shifts error:', error);
+    res.status(500).json({ success: false, message: 'Database error' });
+  }
 });
 
 // Approve shift
-app.put('/api/shifts/:id/approve', (req, res) => {
-  const { id } = req.params;
-  
-  db.run('UPDATE shifts SET status = ? WHERE id = ?', ['approved', id], (err) => {
-    if (err) {
-      return res.status(500).json({ success: false, message: 'Database error' });
-    }
+app.put('/api/shifts/:id/approve', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    await db.query(
+      'UPDATE shifts SET status = $1 WHERE id = $2',
+      ['approved', id]
+    );
     
     res.json({
       success: true,
       message: '승인되었습니다'
     });
-  });
+  } catch (error) {
+    console.error('Approve error:', error);
+    res.status(500).json({ success: false, message: 'Database error' });
+  }
 });
 
 // Update shift
-app.put('/api/shifts/:id', (req, res) => {
-  const { id } = req.params;
-  const { start_time, end_time, work_hours } = req.body;
-  
-  db.run(
-    'UPDATE shifts SET start_time = ?, end_time = ?, work_hours = ?, is_modified = 1 WHERE id = ?',
-    [start_time, end_time, work_hours, id],
-    (err) => {
-      if (err) {
-        return res.status(500).json({ success: false, message: 'Database error' });
-      }
-      
-      res.json({
-        success: true,
-        message: '수정되었습니다'
-      });
-    }
-  );
+app.put('/api/shifts/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { start_time, end_time, work_hours } = req.body;
+    
+    await db.query(
+      'UPDATE shifts SET start_time = $1, end_time = $2, work_hours = $3, is_modified = 1 WHERE id = $4',
+      [start_time, end_time, work_hours, id]
+    );
+    
+    res.json({
+      success: true,
+      message: '수정되었습니다'
+    });
+  } catch (error) {
+    console.error('Update error:', error);
+    res.status(500).json({ success: false, message: 'Database error' });
+  }
 });
 
 // Delete shift
-app.delete('/api/shifts/:id', (req, res) => {
-  const { id } = req.params;
-  
-  db.run('DELETE FROM shifts WHERE id = ?', [id], (err) => {
-    if (err) {
-      return res.status(500).json({ success: false, message: 'Database error' });
-    }
+app.delete('/api/shifts/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    await db.query('DELETE FROM shifts WHERE id = $1', [id]);
     
     res.json({
       success: true,
       message: '삭제되었습니다'
     });
-  });
+  } catch (error) {
+    console.error('Delete error:', error);
+    res.status(500).json({ success: false, message: 'Database error' });
+  }
 });
 
-// Get statistics by user
-app.get('/api/statistics', (req, res) => {
-  const { month } = req.query;
-  
-  let query = `
-    SELECT 
-      u.id,
-      u.name,
-      u.username,
-      COUNT(s.id) as shift_count,
-      SUM(CASE WHEN s.work_hours IS NOT NULL THEN s.work_hours ELSE 0 END) as total_hours,
-      SUM(CASE WHEN s.status = 'approved' THEN 1 ELSE 0 END) as approved_count
-    FROM users u
-    LEFT JOIN shifts s ON u.id = s.user_id
-    WHERE u.role = 'staff'
-  `;
-  
-  if (month) {
-    query += ` AND s.date LIKE '${month}%'`;
-  }
-  
-  query += ' GROUP BY u.id, u.name, u.username ORDER BY u.id';
-  
-  db.all(query, [], (err, stats) => {
-    if (err) {
-      return res.status(500).json({ success: false, message: 'Database error' });
+// Get statistics
+app.get('/api/statistics', async (req, res) => {
+  try {
+    const { month } = req.query;
+    
+    let query = `
+      SELECT 
+        u.id,
+        u.name,
+        u.username,
+        COUNT(s.id) as shift_count,
+        COALESCE(SUM(CASE WHEN s.work_hours IS NOT NULL THEN s.work_hours ELSE 0 END), 0) as total_hours,
+        COUNT(CASE WHEN s.status = 'approved' THEN 1 END) as approved_count
+      FROM users u
+      LEFT JOIN shifts s ON u.id = s.user_id
+      WHERE u.role = 'staff'
+    `;
+    
+    const params = [];
+    if (month) {
+      query += ` AND s.date LIKE $1`;
+      params.push(`${month}%`);
     }
+    
+    query += ' GROUP BY u.id, u.name, u.username ORDER BY u.id';
+    
+    const result = await db.query(query, params);
     
     res.json({
       success: true,
-      statistics: stats
+      statistics: result.rows
     });
-  });
+  } catch (error) {
+    console.error('Statistics error:', error);
+    res.status(500).json({ success: false, message: 'Database error' });
+  }
 });
 
 // Export for Vercel
