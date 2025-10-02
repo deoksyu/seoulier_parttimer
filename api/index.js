@@ -4,14 +4,13 @@ const cors = require('cors');
 const path = require('path');
 
 const app = express();
-const PORT = 5001;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// Database setup
-const dbPath = process.env.DATABASE_PATH || './database.db';
+// Database setup - use /tmp for Vercel
+const dbPath = '/tmp/database.db';
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Database connection error:', err);
@@ -95,9 +94,7 @@ function initDatabase() {
               (err) => {
                 if (err) console.error(`Error inserting ${staff.username}:`, err);
                 if (index === staffMembers.length - 1) {
-                  console.log('✅ Test users created:');
-                  console.log('   관리자: admin / admin');
-                  console.log('   알바생: st01~st08 / st01~st08');
+                  console.log('✅ Test users created');
                 }
               }
             );
@@ -108,6 +105,39 @@ function initDatabase() {
       });
     });
   });
+}
+
+// Calculate work hours
+function calculateWorkHours(startTime, endTime) {
+  const [startHour, startMin] = startTime.split(':').map(Number);
+  const [endHour, endMin] = endTime.split(':').map(Number);
+  
+  const startMinutes = startHour * 60 + startMin;
+  const endMinutes = endHour * 60 + endMin;
+  let diffMinutes = endMinutes - startMinutes;
+  
+  // 휴게시간 15:00~17:00 (900분~1020분) 체크
+  const breakStart = 15 * 60; // 900분 (15:00)
+  const breakEnd = 17 * 60;   // 1020분 (17:00)
+  
+  // 근무 시간이 휴게시간과 겹치는지 확인
+  if (startMinutes < breakEnd && endMinutes > breakStart) {
+    // 휴게시간이 근무 시간에 포함됨
+    const overlapStart = Math.max(startMinutes, breakStart);
+    const overlapEnd = Math.min(endMinutes, breakEnd);
+    const overlapMinutes = overlapEnd - overlapStart;
+    
+    // 겹치는 휴게시간만큼 차감
+    diffMinutes -= overlapMinutes;
+  }
+  
+  const hours = Math.floor(diffMinutes / 60);
+  const minutes = diffMinutes % 60;
+  
+  // 30분 기준 반올림 (0-29분 = 0, 30-59분 = 0.5)
+  const roundedMinutes = minutes >= 30 ? 0.5 : 0;
+  
+  return hours + roundedMinutes;
 }
 
 // API Routes
@@ -169,40 +199,6 @@ app.post('/api/clock-in', (req, res) => {
     });
   });
 });
-
-// Calculate work hours
-function calculateWorkHours(startTime, endTime) {
-  const [startHour, startMin] = startTime.split(':').map(Number);
-  const [endHour, endMin] = endTime.split(':').map(Number);
-  
-  const startMinutes = startHour * 60 + startMin;
-  const endMinutes = endHour * 60 + endMin;
-  let diffMinutes = endMinutes - startMinutes;
-  
-  // 휴게시간 15:00~17:00 (900분~1020분) 체크
-  const breakStart = 15 * 60; // 900분 (15:00)
-  const breakEnd = 17 * 60;   // 1020분 (17:00)
-  const breakDuration = 120;  // 2시간 = 120분
-  
-  // 근무 시간이 휴게시간과 겹치는지 확인
-  if (startMinutes < breakEnd && endMinutes > breakStart) {
-    // 휴게시간이 근무 시간에 포함됨
-    const overlapStart = Math.max(startMinutes, breakStart);
-    const overlapEnd = Math.min(endMinutes, breakEnd);
-    const overlapMinutes = overlapEnd - overlapStart;
-    
-    // 겹치는 휴게시간만큼 차감
-    diffMinutes -= overlapMinutes;
-  }
-  
-  const hours = Math.floor(diffMinutes / 60);
-  const minutes = diffMinutes % 60;
-  
-  // 30분 기준 반올림 (0-29분 = 0, 30-59분 = 0.5)
-  const roundedMinutes = minutes >= 30 ? 0.5 : 0;
-  
-  return hours + roundedMinutes;
-}
 
 // Clock out
 app.post('/api/clock-out', (req, res) => {
@@ -374,7 +370,5 @@ app.get('/api/statistics', (req, res) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+// Export for Vercel
+module.exports = app;

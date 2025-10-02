@@ -303,19 +303,137 @@ tfoot .total-row td {
   color: #856404;
 }
 
-/* Approve Button */
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
 .btn-approve {
-  padding: 6px 16px;
+  padding: 6px 12px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.btn-approve:hover {
+  background: #218838;
+}
+
+.btn-delete {
+  padding: 6px 12px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.btn-delete:hover {
+  background: #c82333;
+}
+
+.btn-edit {
+  padding: 6px 12px;
   background: #007bff;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 500;
 }
 
-.btn-approve:hover {
+.btn-edit:hover {
   background: #0056b3;
+}
+
+.btn-save {
+  padding: 6px 12px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.btn-save:hover {
+  background: #218838;
+}
+
+.btn-cancel {
+  padding: 6px 12px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.btn-cancel:hover {
+  background: #5a6268;
+}
+
+/* Time Input */
+.time-input {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  width: 110px;
+  font-family: 'Courier New', monospace;
+  text-align: center;
+}
+
+.time-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0,123,255,0.1);
+}
+
+/* Force 24-hour format - hide AM/PM */
+.time-input::-webkit-datetime-edit-ampm-field {
+  display: none !important;
+}
+
+input[type="time"]::-webkit-datetime-edit-ampm-field {
+  display: none !important;
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.5);
+}
+
+/* Editing Row */
+.editing-row {
+  background: #fff3cd !important;
+}
+
+/* Modified Badge */
+.modified-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: #ffc107;
+  color: #333;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.modified-row {
+  background: #fff9e6;
 }
 
 /* Print Styles */
@@ -333,7 +451,7 @@ tfoot .total-row td {
   .btn-print,
   .clock-section,
   .message,
-  .btn-approve {
+  .action-buttons {
     display: none !important;
   }
 
@@ -345,6 +463,11 @@ tfoot .total-row td {
   .shifts-section {
     box-shadow: none;
     page-break-inside: avoid;
+  }
+
+  /* Hide sections based on print mode */
+  .print-hide {
+    display: none !important;
   }
 
   table {

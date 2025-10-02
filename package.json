@@ -1,0 +1,14 @@
+{
+  "name": "seoulier-parttimer",
+  "version": "1.0.0",
+  "description": "아르바이트 출퇴근 관리 시스템",
+  "scripts": {
+    "install-all": "cd client && npm install && cd ../server && npm install",
+    "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm run dev\"",
+    "build": "cd client && npm run build",
+    "vercel-build": "cd client && npm install && npm run build"
+  },
+  "keywords": ["attendance", "part-time", "management"],
+  "author": "",
+  "license": "MIT"
+}
