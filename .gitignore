@@ -33,3 +33,13 @@ database.db
 # Temporary files
 *.tmp
 .cache/
+
+# Backups (민감한 데이터 포함)
+backups/
+*.backup
+*.sql
+
+# Test files with credentials
+test-db.js
+backup-db.js
+restore-db.js
