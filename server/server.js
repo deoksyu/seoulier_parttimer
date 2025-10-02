@@ -220,7 +220,7 @@ app.post('/api/clock-out', (req, res) => {
 
 // Get shifts
 app.get('/api/shifts', (req, res) => {
-  const { userId, role } = req.query;
+  const { userId, role, month } = req.query;
   
   let query = `
     SELECT s.*, u.name, u.username 
@@ -228,10 +228,22 @@ app.get('/api/shifts', (req, res) => {
     JOIN users u ON s.user_id = u.id
   `;
   let params = [];
+  let conditions = [];
   
+  // Role-based filtering
   if (role === 'staff') {
-    query += ' WHERE s.user_id = ?';
+    conditions.push('s.user_id = ?');
     params.push(userId);
+  }
+  
+  // Month filtering
+  if (month) {
+    conditions.push('s.date LIKE ?');
+    params.push(`${month}%`);
+  }
+  
+  if (conditions.length > 0) {
+    query += ' WHERE ' + conditions.join(' AND ');
   }
   
   query += ' ORDER BY s.date DESC, s.start_time DESC';

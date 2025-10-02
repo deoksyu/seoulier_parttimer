@@ -10,13 +10,17 @@ function App() {
   const [password, setPassword] = useState('');
   const [shifts, setShifts] = useState([]);
   const [message, setMessage] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
 
-  // Load shifts when user logs in
+  // Load shifts when user logs in or month changes
   useEffect(() => {
     if (user) {
       loadShifts();
     }
-  }, [user]);
+  }, [user, selectedMonth]);
 
   // Login
   const handleLogin = async (e) => {
@@ -76,7 +80,11 @@ function App() {
   const loadShifts = async () => {
     try {
       const response = await axios.get(`${API_URL}/shifts`, {
-        params: { userId: user.id, role: user.role }
+        params: { 
+          userId: user.id, 
+          role: user.role,
+          month: selectedMonth 
+        }
       });
       if (response.data.success) {
         setShifts(response.data.shifts);
@@ -176,7 +184,21 @@ function App() {
         </div>
 
         <div className="shifts-section">
-          <h2>📊 내 근무 내역</h2>
+          <div className="section-header">
+            <h2>📊 내 근무 내역</h2>
+            <select 
+              value={selectedMonth} 
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="month-selector"
+            >
+              <option value="2025-10">2025년 10월</option>
+              <option value="2025-09">2025년 9월</option>
+              <option value="2025-08">2025년 8월</option>
+              <option value="2025-07">2025년 7월</option>
+              <option value="2025-06">2025년 6월</option>
+              <option value="2025-05">2025년 5월</option>
+            </select>
+          </div>
           <table>
             <thead>
               <tr>
@@ -225,7 +247,21 @@ function App() {
       {message && <div className="message success">{message}</div>}
       
       <div className="shifts-section">
-        <h2>📋 전체 근무 기록</h2>
+        <div className="section-header">
+          <h2>📋 전체 근무 기록</h2>
+          <select 
+            value={selectedMonth} 
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="month-selector"
+          >
+            <option value="2025-10">2025년 10월</option>
+            <option value="2025-09">2025년 9월</option>
+            <option value="2025-08">2025년 8월</option>
+            <option value="2025-07">2025년 7월</option>
+            <option value="2025-06">2025년 6월</option>
+            <option value="2025-05">2025년 5월</option>
+          </select>
+        </div>
         <table>
           <thead>
             <tr>

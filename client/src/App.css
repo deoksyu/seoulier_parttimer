@@ -172,6 +172,37 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.section-header h2 {
+  margin: 0;
+  color: #333;
+}
+
+.month-selector {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  background: white;
+}
+
+.month-selector:hover {
+  border-color: #007bff;
+}
+
+.month-selector:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0,123,255,0.1);
+}
+
 .shifts-section h2 {
   margin-bottom: 20px;
   color: #333;
