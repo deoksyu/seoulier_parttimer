@@ -568,7 +568,7 @@ function App() {
   // Check cleaning task
   const handleCheckTask = async (taskId) => {
     // Optimistic UI update - update immediately
-    setTasks(prevTasks => prevTasks.map(task => {
+    setCleaningTasks(prevTasks => prevTasks.map(task => {
       if (task.id === taskId) {
         const currentLevel = task.check_level || 0;
         const newLevel = currentLevel === 0 ? 1 : currentLevel === 1 ? 2 : 0;
