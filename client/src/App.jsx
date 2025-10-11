@@ -573,6 +573,9 @@ function App() {
       return;
     }
 
+    // Save current scroll position
+    const scrollPosition = window.scrollY;
+
     // Mark task as being checked
     setCheckingTasks(prev => new Set(prev).add(taskId));
 
@@ -591,11 +594,20 @@ function App() {
       return task;
     }));
 
+    // Restore scroll position after state update
+    requestAnimationFrame(() => {
+      window.scrollTo(0, scrollPosition);
+    });
+
     try {
       const response = await axios.post(`${API_URL}/cleaning-check`, { taskId, userId: user.id, date: getTodayKST() });
       if (response.data.success) {
         // Reload in background to sync with server
         await loadCleaningTasks();
+        // Restore scroll position after reload
+        requestAnimationFrame(() => {
+          window.scrollTo(0, scrollPosition);
+        });
       }
     } catch (error) {
       // Revert on error
