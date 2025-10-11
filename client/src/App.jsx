@@ -567,15 +567,30 @@ function App() {
 
   // Check cleaning task
   const handleCheckTask = async (taskId) => {
+    // Optimistic UI update - update immediately
+    setTasks(prevTasks => prevTasks.map(task => {
+      if (task.id === taskId) {
+        const currentLevel = task.check_level || 0;
+        const newLevel = currentLevel === 0 ? 1 : currentLevel === 1 ? 2 : 0;
+        return {
+          ...task,
+          checked: newLevel > 0,
+          check_level: newLevel,
+          checked_at: new Date().toLocaleTimeString('ko-KR', { hour12: false })
+        };
+      }
+      return task;
+    }));
+
     try {
       const response = await axios.post(`${API_URL}/cleaning-check`, { taskId, userId: user.id, date: getTodayKST() });
       if (response.data.success) {
+        // Reload in background to sync with server
         loadCleaningTasks();
-        // Reload weekly data
-        const weekDates = getWeekDates();
-        loadWeeklyChecks(weekDates[0].date, weekDates[6].date);
       }
     } catch (error) {
+      // Revert on error
+      loadCleaningTasks();
       setMessage(error.response?.data?.message || '체크 실패');
       setTimeout(() => setMessage(''), 3000);
     }
