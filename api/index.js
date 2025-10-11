@@ -27,11 +27,16 @@ app.use(cors({
 app.use(express.json());
 
 // Database setup (PostgreSQL via Supabase)
+// Optimized connection pool for Vercel Serverless
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
     rejectUnauthorized: false
-  }
+  },
+  max: 1, // Limit connections for serverless (important!)
+  idleTimeoutMillis: 30000, // Close idle connections after 30s
+  connectionTimeoutMillis: 10000, // Timeout after 10s
+  allowExitOnIdle: true // Allow process to exit when idle
 });
 
 // Helper function to query database

@@ -83,6 +83,16 @@ CREATE TABLE monthly_cleanings (
   checked_at TEXT
 );
 
+-- 성능 최적화를 위한 인덱스 생성
+CREATE INDEX idx_users_pin ON users(pin);
+CREATE INDEX idx_shifts_user_date ON shifts(user_id, date);
+CREATE INDEX idx_shifts_date ON shifts(date);
+CREATE INDEX idx_daily_cleanings_date ON daily_cleanings(date);
+CREATE INDEX idx_daily_cleanings_task_date ON daily_cleanings(task_id, date);
+CREATE INDEX idx_weekly_cleanings_week ON weekly_cleanings(week_start);
+CREATE INDEX idx_monthly_cleanings_month ON monthly_cleanings(month);
+CREATE INDEX idx_cleaning_tasks_active ON cleaning_tasks(is_active);
+
 -- 초기 사용자 데이터 삽입 (PIN 포함)
 INSERT INTO users (username, password, name, role, pin, hourly_wage) VALUES
   ('admin', 'admin', '관리자', 'admin', '9999', 10000),
