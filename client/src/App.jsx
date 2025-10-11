@@ -705,7 +705,7 @@ function App() {
   // Load admin cleaning statistics
   const loadAdminCleaningStats = async () => {
     try {
-      const response = await axios.get(`${API_URL}/admin-cleaning-stats`, {
+      const response = await axios.get(`${API_URL}/admin/cleaning-stats`, {
         params: { month: selectedMonth }
       });
       if (response.data.success) {
