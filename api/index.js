@@ -557,6 +557,44 @@ app.get('/api/admin/cleaning-stats', async (req, res) => {
   }
 });
 
+// Get admin cleaning detail for a specific date
+app.get('/api/admin/cleaning-detail/:date', async (req, res) => {
+  try {
+    const { date } = req.params;
+    
+    const tasksResult = await query(
+      'SELECT * FROM cleaning_tasks WHERE is_active = 1 ORDER BY order_num, id'
+    );
+    
+    const checksResult = await query(
+      `SELECT dc.*, u.name as checked_by_name 
+       FROM daily_cleanings dc 
+       LEFT JOIN users u ON dc.checked_by = u.id 
+       WHERE dc.date = $1`,
+      [date]
+    );
+    
+    const tasks = tasksResult.rows.map(task => {
+      const check = checksResult.rows.find(c => c.task_id === task.id);
+      return {
+        id: task.id,
+        title: task.title,
+        category: task.category,
+        check_id: check ? check.id : null,
+        check_level: check ? (check.check_level || 1) : 0,
+        checked_by: check ? check.checked_by : null,
+        checked_at: check ? check.checked_at : null,
+        checked_by_name: check ? check.checked_by_name : null
+      };
+    });
+    
+    res.json({ success: true, tasks });
+  } catch (error) {
+    console.error('Get admin cleaning detail error:', error);
+    res.status(500).json({ success: false, message: 'Database error' });
+  }
+});
+
 // Add cleaning task
 app.post('/api/cleaning-tasks', async (req, res) => {
   try {

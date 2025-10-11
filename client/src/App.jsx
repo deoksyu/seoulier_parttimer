@@ -42,7 +42,8 @@ function DayDetailContent({ date, onUpdate }) {
 
   const handleToggleTask = async (taskId, currentCheckId) => {
     try {
-      const response = await axios.post(`${API_URL}/cleaning/check/${taskId}`, {
+      const response = await axios.post(`${API_URL}/cleaning-check`, {
+        taskId: taskId,
         userId: 1, // Admin user ID
         date: date // Pass the selected date
       });
