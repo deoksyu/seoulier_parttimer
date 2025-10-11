@@ -19,7 +19,7 @@ const getTodayKST = () => {
 };
 
 // Day Detail Content Component
-function DayDetailContent({ date, onUpdate }) {
+function DayDetailContent({ date, userId, onUpdate }) {
   const [detailTasks, setDetailTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -44,7 +44,7 @@ function DayDetailContent({ date, onUpdate }) {
     try {
       const response = await axios.post(`${API_URL}/cleaning-check`, {
         taskId: taskId,
-        userId: 1, // Admin user ID
+        userId: userId, // Use logged-in user ID
         date: date // Pass the selected date
       });
       if (response.data.success) {
@@ -99,7 +99,11 @@ function DayDetailContent({ date, onUpdate }) {
                   )}
                 </span>
                 {task.check_id && task.checked_at && (
-                  <span className="task-time">{task.checked_at}</span>
+                  <span className="task-time">
+                    {task.checked_at.includes('T') 
+                      ? task.checked_at.split('T')[1].substring(0, 5)
+                      : task.checked_at.substring(0, 5)}
+                  </span>
                 )}
               </div>
             ))}
@@ -1971,7 +1975,8 @@ function App() {
                       </div>
                       
                       <DayDetailContent 
-                        date={selectedDayDetail.date} 
+                        date={selectedDayDetail.date}
+                        userId={user?.id}
                         onUpdate={async () => {
                           // Reload cleaning stats when tasks are updated
                           try {
