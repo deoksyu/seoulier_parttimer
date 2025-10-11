@@ -132,6 +132,7 @@ function App() {
   const [cleaningTasks, setCleaningTasks] = useState([]);
   const [cleaningStats, setCleaningStats] = useState(null);
   const [weeklyChecks, setWeeklyChecks] = useState([]);
+  const [checkingTasks, setCheckingTasks] = useState(new Set()); // Track tasks being checked
   const [weeklyTasks, setWeeklyTasks] = useState([]);
   const [monthlyTasks, setMonthlyTasks] = useState([]);
   const [adminTab, setAdminTab] = useState('work'); // 'work', 'cleaning', or 'hr'
@@ -567,6 +568,14 @@ function App() {
 
   // Check cleaning task
   const handleCheckTask = async (taskId) => {
+    // Prevent duplicate clicks
+    if (checkingTasks.has(taskId)) {
+      return;
+    }
+
+    // Mark task as being checked
+    setCheckingTasks(prev => new Set(prev).add(taskId));
+
     // Optimistic UI update - update immediately
     setCleaningTasks(prevTasks => prevTasks.map(task => {
       if (task.id === taskId) {
@@ -586,13 +595,20 @@ function App() {
       const response = await axios.post(`${API_URL}/cleaning-check`, { taskId, userId: user.id, date: getTodayKST() });
       if (response.data.success) {
         // Reload in background to sync with server
-        loadCleaningTasks();
+        await loadCleaningTasks();
       }
     } catch (error) {
       // Revert on error
       loadCleaningTasks();
       setMessage(error.response?.data?.message || '체크 실패');
       setTimeout(() => setMessage(''), 3000);
+    } finally {
+      // Remove task from checking set
+      setCheckingTasks(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(taskId);
+        return newSet;
+      });
     }
   };
 
