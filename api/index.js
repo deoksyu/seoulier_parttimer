@@ -35,30 +35,37 @@ function calculateWorkHours(startTime, endTime) {
   return hours + roundedMinutes;
 }
 
-// Login
+// Login with PIN
 app.post('/api/login', async (req, res) => {
   try {
     console.log('Login attempt:', req.body);
-    const { username, password } = req.body;
+    const { pin } = req.body;
     
-    console.log('Querying database for user:', username);
+    if (!pin || pin.length !== 4) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'PIN 번호 4자리를 입력해주세요' 
+      });
+    }
+    
+    console.log('Querying database for PIN:', pin);
     const result = await db.query(
-      'SELECT * FROM users WHERE username = $1 AND password = $2',
-      [username, password]
+      'SELECT * FROM users WHERE pin = $1',
+      [pin]
     );
     
     console.log('Query result rows:', result.rows.length);
     
     if (result.rows.length === 0) {
-      console.log('Login failed: User not found');
+      console.log('Login failed: Invalid PIN');
       return res.status(401).json({ 
         success: false, 
-        message: '아이디 또는 비밀번호가 잘못되었습니다' 
+        message: 'PIN 번호가 잘못되었습니다' 
       });
     }
     
     const user = result.rows[0];
-    console.log('Login successful for user:', user.username);
+    console.log('Login successful for user:', user.name);
     res.json({
       success: true,
       user: {
@@ -231,11 +238,11 @@ app.put('/api/shifts/:id/approve', async (req, res) => {
 app.put('/api/shifts/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { start_time, end_time, work_hours } = req.body;
+    const { date, start_time, end_time, work_hours } = req.body;
     
     await db.query(
-      'UPDATE shifts SET start_time = $1, end_time = $2, work_hours = $3, is_modified = 1 WHERE id = $4',
-      [start_time, end_time, work_hours, id]
+      'UPDATE shifts SET date = $1, start_time = $2, end_time = $3, work_hours = $4, is_modified = 1 WHERE id = $5',
+      [date, start_time, end_time, work_hours, id]
     );
     
     res.json({
