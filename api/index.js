@@ -524,9 +524,32 @@ app.get('/api/admin/cleaning-stats', async (req, res) => {
       [totalTasks, `${month}%`]
     );
     
+    // Calculate monthly average completion rate
+    let monthlyCompletionRate = 0;
+    if (statsResult.rows.length > 0) {
+      const totalRate = statsResult.rows.reduce((sum, stat) => sum + parseFloat(stat.completion_rate || 0), 0);
+      monthlyCompletionRate = Math.round(totalRate / statsResult.rows.length);
+    }
+    
+    // Calculate consecutive days (100% completion)
+    let consecutiveDays = 0;
+    const sortedStats = statsResult.rows.sort((a, b) => b.date.localeCompare(a.date));
+    for (const stat of sortedStats) {
+      if (parseFloat(stat.completion_rate) === 100) {
+        consecutiveDays++;
+      } else {
+        break;
+      }
+    }
+    
     res.json({
       success: true,
-      stats: statsResult.rows
+      stats: {
+        dailyStats: statsResult.rows,
+        monthlyCompletionRate,
+        consecutiveDays,
+        totalTasks
+      }
     });
   } catch (error) {
     console.error('Get admin cleaning stats error:', error);

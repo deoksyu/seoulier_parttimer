@@ -1802,8 +1802,8 @@ function App() {
                     
                     // Create stats map for quick lookup
                     const statsMap = {};
-                    if (adminCleaningStats && Array.isArray(adminCleaningStats)) {
-                      adminCleaningStats.forEach(stat => {
+                    if (adminCleaningStats && adminCleaningStats.dailyStats && Array.isArray(adminCleaningStats.dailyStats)) {
+                      adminCleaningStats.dailyStats.forEach(stat => {
                         statsMap[stat.date] = stat;
                       });
                     }
