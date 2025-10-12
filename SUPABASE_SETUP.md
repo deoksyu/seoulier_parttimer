@@ -93,6 +93,9 @@ CREATE INDEX idx_weekly_cleanings_week ON weekly_cleanings(week_start);
 CREATE INDEX idx_monthly_cleanings_month ON monthly_cleanings(month);
 CREATE INDEX idx_cleaning_tasks_active ON cleaning_tasks(is_active);
 
+-- 직급(position) 컬럼 추가 (기존 테이블에 추가하는 경우)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS position TEXT DEFAULT '직원';
+
 -- 초기 사용자 데이터 삽입 (PIN 포함)
 INSERT INTO users (username, password, name, role, pin, hourly_wage) VALUES
   ('admin', 'admin', '관리자', 'admin', '9999', 10000),

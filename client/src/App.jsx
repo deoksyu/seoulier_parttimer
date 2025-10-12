@@ -2165,7 +2165,7 @@ function App() {
               <thead>
                 <tr>
                   <th>이름</th>
-                  <th>아이디</th>
+                  <th>직급</th>
                   <th>PIN</th>
                   <th>전화번호</th>
                   <th>입사일</th>
@@ -2191,7 +2191,7 @@ function App() {
                       className="clickable-row"
                     >
                       <td><strong>{emp.name}</strong></td>
-                      <td>{emp.username}</td>
+                      <td>{emp.position || '직원'}</td>
                       <td>{emp.pin || '-'}</td>
                       <td>{emp.phone || '-'}</td>
                       <td>{emp.hire_date || '-'}</td>
@@ -2221,8 +2221,8 @@ function App() {
                           <span className="detail-value">{selectedEmployee.name}</span>
                         </div>
                         <div className="detail-item">
-                          <span className="detail-label">아이디</span>
-                          <span className="detail-value">{selectedEmployee.username}</span>
+                          <span className="detail-label">직급</span>
+                          <span className="detail-value">{selectedEmployee.position || '직원'}</span>
                         </div>
                         <div className="detail-item">
                           <span className="detail-label">PIN</span>
