@@ -2244,13 +2244,6 @@ function App() {
                           <span className="detail-label">PIN</span>
                           <span className="detail-value">{selectedEmployee.pin || '-'}</span>
                         </div>
-                        <div className="detail-item">
-                          <span className="detail-label">역할</span>
-                          <span className="detail-value">
-                            {selectedEmployee.role === 'staff' ? '알바생' : 
-                             selectedEmployee.role === 'cleaning' ? '청소담당' : '기타'}
-                          </span>
-                        </div>
                       </div>
                     </div>
 
