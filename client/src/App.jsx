@@ -142,6 +142,7 @@ function App() {
   const [employees, setEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
+  const [workplaceFilter, setWorkplaceFilter] = useState('all'); // 근무지 필터
   const [adminWeeklyTasks, setAdminWeeklyTasks] = useState([]);
   const [adminMonthlyTasks, setAdminMonthlyTasks] = useState([]);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -2135,27 +2136,43 @@ function App() {
               <h2>👥 직원 관리</h2>
             </div>
             
+            {/* 근무지 필터 */}
+            <div style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <label style={{ fontWeight: 'bold' }}>근무지:</label>
+              <select 
+                value={workplaceFilter} 
+                onChange={(e) => setWorkplaceFilter(e.target.value)}
+                style={{ padding: '8px 12px', borderRadius: '5px', border: '1px solid #ddd' }}
+              >
+                <option value="all">전체</option>
+                <option value="서울역 홀">서울역 홀</option>
+                <option value="서울역 주방">서울역 주방</option>
+                <option value="목동 홀">목동 홀</option>
+                <option value="목동 주방">목동 주방</option>
+              </select>
+            </div>
+
             {/* 요약 카드 */}
             <div className="hr-summary-cards">
               <div className="hr-card">
                 <div className="hr-card-icon">👥</div>
                 <div className="hr-card-content">
                   <div className="hr-card-label">총 직원 수</div>
-                  <div className="hr-card-value">{employees.length}명</div>
+                  <div className="hr-card-value">{employees.filter(e => workplaceFilter === 'all' || e.workplace === workplaceFilter).length}명</div>
                 </div>
               </div>
               <div className="hr-card">
                 <div className="hr-card-icon">💼</div>
                 <div className="hr-card-content">
                   <div className="hr-card-label">알바생</div>
-                  <div className="hr-card-value">{employees.filter(e => e.role === 'staff').length}명</div>
+                  <div className="hr-card-value">{employees.filter(e => e.role === 'staff' && (workplaceFilter === 'all' || e.workplace === workplaceFilter)).length}명</div>
                 </div>
               </div>
               <div className="hr-card">
                 <div className="hr-card-icon">🧹</div>
                 <div className="hr-card-content">
                   <div className="hr-card-label">청소담당</div>
-                  <div className="hr-card-value">{employees.filter(e => e.role === 'cleaning').length}명</div>
+                  <div className="hr-card-value">{employees.filter(e => e.role === 'cleaning' && (workplaceFilter === 'all' || e.workplace === workplaceFilter)).length}명</div>
                 </div>
               </div>
             </div>
@@ -2166,6 +2183,7 @@ function App() {
                 <tr>
                   <th>이름</th>
                   <th>직급</th>
+                  <th>근무지</th>
                   <th>PIN</th>
                   <th>전화번호</th>
                   <th>입사일</th>
@@ -2173,14 +2191,14 @@ function App() {
                 </tr>
               </thead>
               <tbody>
-                {employees.length === 0 ? (
+                {employees.filter(e => workplaceFilter === 'all' || e.workplace === workplaceFilter).length === 0 ? (
                   <tr>
-                    <td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                    <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
                       직원 데이터가 없습니다
                     </td>
                   </tr>
                 ) : (
-                  employees.map(emp => (
+                  employees.filter(e => workplaceFilter === 'all' || e.workplace === workplaceFilter).map(emp => (
                     <tr 
                       key={emp.id}
                       onClick={() => {
@@ -2192,6 +2210,7 @@ function App() {
                     >
                       <td><strong>{emp.name}</strong></td>
                       <td>{emp.position || '직원'}</td>
+                      <td>{emp.workplace || '서울역 홀'}</td>
                       <td>{emp.pin || '-'}</td>
                       <td>{emp.phone || '-'}</td>
                       <td>{emp.hire_date || '-'}</td>
@@ -2223,6 +2242,10 @@ function App() {
                         <div className="detail-item">
                           <span className="detail-label">직급</span>
                           <span className="detail-value">{selectedEmployee.position || '직원'}</span>
+                        </div>
+                        <div className="detail-item">
+                          <span className="detail-label">근무지</span>
+                          <span className="detail-value">{selectedEmployee.workplace || '서울역 홀'}</span>
                         </div>
                         <div className="detail-item">
                           <span className="detail-label">PIN</span>
