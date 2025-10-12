@@ -2158,21 +2158,14 @@ function App() {
                 <div className="hr-card-icon">👥</div>
                 <div className="hr-card-content">
                   <div className="hr-card-label">총 직원 수</div>
-                  <div className="hr-card-value">{employees.filter(e => workplaceFilter === 'all' || e.workplace === workplaceFilter).length}명</div>
+                  <div className="hr-card-value">{employees.filter(e => e.role !== 'cleaning' && (workplaceFilter === 'all' || e.workplace === workplaceFilter)).length}명</div>
                 </div>
               </div>
               <div className="hr-card">
                 <div className="hr-card-icon">💼</div>
                 <div className="hr-card-content">
-                  <div className="hr-card-label">알바생</div>
-                  <div className="hr-card-value">{employees.filter(e => e.role === 'staff' && (workplaceFilter === 'all' || e.workplace === workplaceFilter)).length}명</div>
-                </div>
-              </div>
-              <div className="hr-card">
-                <div className="hr-card-icon">🧹</div>
-                <div className="hr-card-content">
-                  <div className="hr-card-label">청소담당</div>
-                  <div className="hr-card-value">{employees.filter(e => e.role === 'cleaning' && (workplaceFilter === 'all' || e.workplace === workplaceFilter)).length}명</div>
+                  <div className="hr-card-label">알바생 (PT)</div>
+                  <div className="hr-card-value">{employees.filter(e => e.position === 'PT' && (workplaceFilter === 'all' || e.workplace === workplaceFilter)).length}명</div>
                 </div>
               </div>
             </div>
@@ -2191,14 +2184,14 @@ function App() {
                 </tr>
               </thead>
               <tbody>
-                {employees.filter(e => workplaceFilter === 'all' || e.workplace === workplaceFilter).length === 0 ? (
+                {employees.filter(e => e.role !== 'cleaning' && (workplaceFilter === 'all' || e.workplace === workplaceFilter)).length === 0 ? (
                   <tr>
                     <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
                       직원 데이터가 없습니다
                     </td>
                   </tr>
                 ) : (
-                  employees.filter(e => workplaceFilter === 'all' || e.workplace === workplaceFilter).map(emp => (
+                  employees.filter(e => e.role !== 'cleaning' && (workplaceFilter === 'all' || e.workplace === workplaceFilter)).map(emp => (
                     <tr 
                       key={emp.id}
                       onClick={() => {
