@@ -501,13 +501,21 @@ app.get('/api/cleaning-stats', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Date is required' });
     }
     
+    // Exclude '기타' category from total task count
     const totalResult = await query(
-      'SELECT COUNT(*) as total FROM cleaning_tasks WHERE is_active = 1'
+      "SELECT COUNT(*) as total FROM cleaning_tasks WHERE is_active = 1 AND category != '기타'"
     );
     
+    // Get task IDs excluding '기타' category
+    const taskIdsResult = await query(
+      "SELECT id FROM cleaning_tasks WHERE is_active = 1 AND category != '기타'"
+    );
+    const taskIds = taskIdsResult.rows.map(row => row.id);
+    
+    // Count only completed tasks that are NOT in '기타' category
     const completedResult = await query(
-      'SELECT COUNT(*) as completed FROM daily_cleanings WHERE date = $1',
-      [date]
+      'SELECT COUNT(*) as completed FROM daily_cleanings WHERE date = $1 AND task_id = ANY($2)',
+      [date, taskIds]
     );
     
     const total = parseInt(totalResult.rows[0].total);
@@ -537,21 +545,29 @@ app.get('/api/admin/cleaning-stats', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Month is required' });
     }
     
+    // Exclude '기타' category from total task count
     const totalResult = await query(
-      'SELECT COUNT(*) as total FROM cleaning_tasks WHERE is_active = 1'
+      "SELECT COUNT(*) as total FROM cleaning_tasks WHERE is_active = 1 AND category != '기타'"
     );
     const totalTasks = parseInt(totalResult.rows[0].total);
     
+    // Get all task IDs excluding '기타' category
+    const taskIdsResult = await query(
+      "SELECT id FROM cleaning_tasks WHERE is_active = 1 AND category != '기타'"
+    );
+    const taskIds = taskIdsResult.rows.map(row => row.id);
+    
+    // Count only completed tasks that are NOT in '기타' category
     const statsResult = await query(
       `SELECT 
         date,
         COUNT(*) as completed_count,
         ROUND((COUNT(*) * 100.0 / $1)::numeric, 0) as completion_rate
        FROM daily_cleanings
-       WHERE date LIKE $2
+       WHERE date LIKE $2 AND task_id = ANY($3)
        GROUP BY date
        ORDER BY date`,
-      [totalTasks, `${month}%`]
+      [totalTasks, `${month}%`, taskIds]
     );
     
     // Calculate monthly average completion rate
