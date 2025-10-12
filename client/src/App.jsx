@@ -2217,7 +2217,13 @@ function App() {
                     >
                       <td><strong>{emp.name}</strong></td>
                       <td>{emp.position || '직원'}</td>
-                      <td>{emp.workplace || '서울역 홀'}</td>
+                      <td style={{
+                        color: emp.workplace?.includes('목동') ? '#8b5cf6' : 
+                               emp.workplace?.includes('서울역') ? '#3b82f6' : 'inherit',
+                        fontWeight: '500'
+                      }}>
+                        {emp.workplace || '서울역 홀'}
+                      </td>
                       <td>{emp.pin || '-'}</td>
                       <td>{emp.phone || '-'}</td>
                       <td>{emp.hire_date || '-'}</td>
