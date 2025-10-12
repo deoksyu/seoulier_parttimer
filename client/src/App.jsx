@@ -559,11 +559,18 @@ function App() {
     }
   };
 
-  // Load weekly cleaning data (not used currently)
+  // Load weekly cleaning data
   const loadWeeklyChecks = async (startDate, endDate) => {
-    // This function is not needed for current implementation
-    // Weekly view uses daily tasks with date parameter
-    return;
+    try {
+      const response = await axios.get(`${API_URL}/cleaning-weekly`, {
+        params: { startDate, endDate }
+      });
+      if (response.data.success) {
+        setWeeklyChecks(response.data.checks);
+      }
+    } catch (error) {
+      console.error('Failed to load weekly checks:', error);
+    }
   };
 
   // Check cleaning task
@@ -1090,9 +1097,29 @@ function App() {
                           </td>
                           {weekDates.map(day => {
                             const isToday = day.isToday;
-                            // For today, use task.checked from loaded data
-                            const isChecked = isToday ? task.checked : false;
-                            const checkLevel = isToday ? (task.check_level || 0) : 0;
+                            
+                            // Find check data for this task and date
+                            let isChecked = false;
+                            let checkLevel = 0;
+                            let checkedByName = '';
+                            let checkedAt = '';
+                            
+                            if (isToday) {
+                              // For today, use task.checked from loaded data
+                              isChecked = task.checked;
+                              checkLevel = task.check_level || 0;
+                              checkedByName = task.checked_by_name || '';
+                              checkedAt = task.checked_at || '';
+                            } else {
+                              // For other days, check weeklyChecks data
+                              const check = weeklyChecks.find(c => c.task_id === task.id && c.date === day.date);
+                              if (check) {
+                                isChecked = true;
+                                checkLevel = check.check_level || 1;
+                                checkedByName = check.checked_by_name || '';
+                                checkedAt = check.checked_at || '';
+                              }
+                            }
                             
                             return (
                               <td 
@@ -1103,7 +1130,7 @@ function App() {
                                     handleCheckTask(task.id);
                                   }
                                 }}
-                                title={isChecked && task.checked_by_name ? `${task.checked_by_name} · ${task.checked_at} ${checkLevel === 2 ? '(2차)' : '(1차)'}` : ''}
+                                title={isChecked && checkedByName ? `${checkedByName} · ${checkedAt} ${checkLevel === 2 ? '(2차)' : '(1차)'}` : ''}
                               >
                                 {isChecked ? '✓' : ''}
                               </td>

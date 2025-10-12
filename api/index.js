@@ -424,6 +424,31 @@ app.get('/api/cleaning-tasks', async (req, res) => {
   }
 });
 
+// Get weekly cleaning data
+app.get('/api/cleaning-weekly', async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    
+    if (!startDate || !endDate) {
+      return res.status(400).json({ success: false, message: 'Start and end dates required' });
+    }
+    
+    // Get all checks for the date range
+    const checksResult = await query(
+      `SELECT dc.*, u.name as checked_by_name 
+       FROM daily_cleanings dc 
+       LEFT JOIN users u ON dc.checked_by = u.id 
+       WHERE dc.date >= $1 AND dc.date <= $2`,
+      [startDate, endDate]
+    );
+    
+    res.json({ success: true, checks: checksResult.rows });
+  } catch (error) {
+    console.error('Get weekly cleaning error:', error);
+    res.status(500).json({ success: false, message: 'Database error' });
+  }
+});
+
 // Toggle cleaning check (double check support)
 app.post('/api/cleaning-check', async (req, res) => {
   try {
