@@ -151,6 +151,7 @@ function App() {
   const [selectedDayDetail, setSelectedDayDetail] = useState(null);
   const [showWorkDayModal, setShowWorkDayModal] = useState(false);
   const [selectedWorkDay, setSelectedWorkDay] = useState(null);
+  const [autoLogoutTimer, setAutoLogoutTimer] = useState(null); // 자동 로그아웃 타이머
 
   // Load shifts when user logs in or month/staff changes
   useEffect(() => {
@@ -214,6 +215,11 @@ function App() {
 
   // Logout
   const handleLogout = () => {
+    // 자동 로그아웃 타이머가 있으면 취소
+    if (autoLogoutTimer) {
+      clearTimeout(autoLogoutTimer);
+      setAutoLogoutTimer(null);
+    }
     setUser(null);
     setShifts([]);
     setPin('');
@@ -243,9 +249,10 @@ function App() {
         loadShifts();
         
         // Auto logout after 10 seconds
-        setTimeout(() => {
+        const timer = setTimeout(() => {
           handleLogout();
         }, 10000);
+        setAutoLogoutTimer(timer);
       }
     } catch (error) {
       setMessage(error.response?.data?.message || '퇴근 처리 실패');
@@ -471,15 +478,22 @@ function App() {
     for (const shift of sortedShifts) {
       if (!shift.start_time) continue;
       
-      // 출근 시간이 11:00 이하인지 확인 (11:01부터 지각)
+      // 출근 시간이 09:00~11:00 또는 15:00~17:00 사이인지 확인
       const [hour, minute] = shift.start_time.split(':').map(Number);
       const startMinutes = hour * 60 + minute;
-      const lateThreshold = 11 * 60; // 11:00 = 660분
       
-      if (startMinutes <= lateThreshold) {
+      const morningStart = 9 * 60;   // 09:00 = 540분
+      const morningEnd = 11 * 60;    // 11:00 = 660분
+      const afternoonStart = 15 * 60; // 15:00 = 900분
+      const afternoonEnd = 17 * 60;   // 17:00 = 1020분
+      
+      const isOnTime = (startMinutes >= morningStart && startMinutes <= morningEnd) ||
+                       (startMinutes >= afternoonStart && startMinutes <= afternoonEnd);
+      
+      if (isOnTime) {
         consecutiveDays++;
       } else {
-        // 지각하면 연속 기록 중단
+        // 정시 출근 시간대가 아니면 연속 기록 중단
         break;
       }
     }
