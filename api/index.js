@@ -604,19 +604,32 @@ app.get('/api/admin/cleaning-detail/:date', async (req, res) => {
       [date]
     );
     
-    const tasks = tasksResult.rows.map(task => {
-      const check = checksResult.rows.find(c => c.task_id === task.id);
-      return {
-        id: task.id,
-        title: task.title,
-        category: task.category,
-        check_id: check ? check.id : null,
-        check_level: check ? (check.check_level || 1) : 0,
-        checked_by: check ? check.checked_by : null,
-        checked_at: check ? check.checked_at : null,
-        checked_by_name: check ? check.checked_by_name : null
-      };
-    });
+    // Parse requested date to MM/DD format for filtering '기타' items
+    const [year, month, day] = date.split('-');
+    const requestedDateStr = `${month}/${day}`;
+    
+    const tasks = tasksResult.rows
+      .filter(task => {
+        // Filter out '기타' category items that don't match the requested date
+        if (task.category === '기타' && task.title.includes('|||')) {
+          const taskDateStr = task.title.split('|||')[1]; // Extract MM/DD from title
+          return taskDateStr === requestedDateStr;
+        }
+        return true; // Include all non-'기타' items
+      })
+      .map(task => {
+        const check = checksResult.rows.find(c => c.task_id === task.id);
+        return {
+          id: task.id,
+          title: task.title,
+          category: task.category,
+          check_id: check ? check.id : null,
+          check_level: check ? (check.check_level || 1) : 0,
+          checked_by: check ? check.checked_by : null,
+          checked_at: check ? check.checked_at : null,
+          checked_by_name: check ? check.checked_by_name : null
+        };
+      });
     
     res.json({ success: true, tasks });
   } catch (error) {
