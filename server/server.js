@@ -469,18 +469,55 @@ app.get('/api/employees/:id', (req, res) => {
 // Update employee
 app.put('/api/employees/:id', (req, res) => {
   const { id } = req.params;
-  const { name, phone, email, hire_date, hourly_wage, memo, pin } = req.body;
+  const { name, phone, email, hire_date, hourly_wage, memo, pin, workplace, position } = req.body;
   
-  db.run(
-    'UPDATE users SET name = ?, phone = ?, email = ?, hire_date = ?, hourly_wage = ?, memo = ?, pin = ? WHERE id = ?',
-    [name, phone, email, hire_date, hourly_wage, memo, pin, id],
-    (err) => {
+  // 유효성 검사
+  if (!name || !name.trim()) {
+    return res.status(400).json({ success: false, message: '이름은 필수입니다' });
+  }
+  
+  // PIN 유효성 검사 및 중복 체크
+  if (pin) {
+    if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+      return res.status(400).json({ success: false, message: 'PIN은 4자리 숫자여야 합니다' });
+    }
+    
+    // PIN 중복 체크 (다른 사용자가 같은 PIN을 사용하는지 확인)
+    db.get('SELECT id FROM users WHERE pin = ? AND id != ?', [pin, id], (err, existingUser) => {
       if (err) {
         return res.status(500).json({ success: false, message: 'Database error' });
       }
-      res.json({ success: true, message: 'Employee updated successfully' });
-    }
-  );
+      
+      if (existingUser) {
+        return res.status(400).json({ success: false, message: '이미 사용 중인 PIN입니다' });
+      }
+      
+      // PIN 중복이 없으면 업데이트 진행
+      updateEmployee();
+    });
+  } else {
+    // PIN이 없으면 바로 업데이트
+    updateEmployee();
+  }
+  
+  function updateEmployee() {
+    db.run(
+      'UPDATE users SET name = ?, phone = ?, email = ?, hire_date = ?, hourly_wage = ?, memo = ?, pin = ?, workplace = ?, position = ? WHERE id = ?',
+      [name, phone, email, hire_date, hourly_wage, memo, pin || null, workplace || null, position || null, id],
+      function(err) {
+        if (err) {
+          console.error('Update error:', err);
+          return res.status(500).json({ success: false, message: 'Database error' });
+        }
+        
+        if (this.changes === 0) {
+          return res.status(404).json({ success: false, message: '직원을 찾을 수 없습니다' });
+        }
+        
+        res.json({ success: true, message: '직원 정보가 수정되었습니다' });
+      }
+    );
+  }
 });
 
 // ==================== CLEANING MANAGEMENT ====================

@@ -152,6 +152,18 @@ function App() {
   const [showWorkDayModal, setShowWorkDayModal] = useState(false);
   const [selectedWorkDay, setSelectedWorkDay] = useState(null);
   const [autoLogoutTimer, setAutoLogoutTimer] = useState(null); // 자동 로그아웃 타이머
+  const [editingEmployee, setEditingEmployee] = useState(null); // 수정 중인 직원 ID
+  const [editForm, setEditForm] = useState({ // 직원 수정 폼
+    name: '',
+    pin: '',
+    phone: '',
+    email: '',
+    workplace: '',
+    position: '',
+    hire_date: '',
+    hourly_wage: '',
+    memo: ''
+  });
 
   // Load shifts when user logs in or month/staff changes
   useEffect(() => {
@@ -302,6 +314,77 @@ function App() {
       }
     } catch (error) {
       console.error('Failed to load employees:', error);
+    }
+  };
+
+  // Edit employee - enter edit mode
+  const handleEditEmployee = (employee) => {
+    setEditingEmployee(employee.id);
+    setEditForm({
+      name: employee.name || '',
+      pin: employee.pin || '',
+      phone: employee.phone || '',
+      email: employee.email || '',
+      workplace: employee.workplace || '서울역 홀',
+      position: employee.position || 'PT',
+      hire_date: employee.hire_date || '',
+      hourly_wage: employee.hourly_wage || '',
+      memo: employee.memo || ''
+    });
+  };
+
+  // Cancel employee edit
+  const handleCancelEditEmployee = () => {
+    setEditingEmployee(null);
+    setEditForm({
+      name: '',
+      pin: '',
+      phone: '',
+      email: '',
+      workplace: '',
+      position: '',
+      hire_date: '',
+      hourly_wage: '',
+      memo: ''
+    });
+  };
+
+  // Save employee changes
+  const handleSaveEmployee = async () => {
+    // 유효성 검사
+    if (!editForm.name.trim()) {
+      setMessage('이름을 입력해주세요');
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
+    
+    if (editForm.pin && editForm.pin.length !== 4) {
+      setMessage('PIN은 4자리 숫자여야 합니다');
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
+
+    try {
+      const response = await axios.put(`${API_URL}/employees/${editingEmployee}`, editForm);
+      if (response.data.success) {
+        setMessage('직원 정보가 수정되었습니다');
+        setTimeout(() => setMessage(''), 3000);
+        
+        // 직원 목록 새로고침
+        loadEmployees();
+        
+        // 선택된 직원 정보 업데이트
+        setSelectedEmployee({
+          ...selectedEmployee,
+          ...editForm
+        });
+        
+        // 수정 모드 종료
+        setEditingEmployee(null);
+      }
+    } catch (error) {
+      setMessage(error.response?.data?.message || '직원 정보 수정 실패');
+      setTimeout(() => setMessage(''), 3000);
     }
   };
 
@@ -2237,75 +2320,273 @@ function App() {
 
           {/* 직원 상세 모달 */}
           {showEmployeeModal && selectedEmployee && (
-            <div className="modal-overlay" onClick={() => setShowEmployeeModal(false)}>
+            <div className="modal-overlay" onClick={() => {
+              setShowEmployeeModal(false);
+              setEditingEmployee(null);
+            }}>
               <div className="modal-content employee-modal" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
                   <h2>👤 {selectedEmployee.name} 상세 정보</h2>
-                  <button className="modal-close" onClick={() => setShowEmployeeModal(false)}>✕</button>
+                  <button className="modal-close" onClick={() => {
+                    setShowEmployeeModal(false);
+                    setEditingEmployee(null);
+                  }}>✕</button>
                 </div>
                 <div className="modal-body">
-                  <div className="employee-detail-card">
-                    <div className="employee-detail-section">
-                      <h3>기본 정보</h3>
-                      <div className="employee-detail-grid">
-                        <div className="detail-item">
-                          <span className="detail-label">이름</span>
-                          <span className="detail-value">{selectedEmployee.name}</span>
-                        </div>
-                        <div className="detail-item">
-                          <span className="detail-label">직급</span>
-                          <span className="detail-value">{selectedEmployee.position || '직원'}</span>
-                        </div>
-                        <div className="detail-item">
-                          <span className="detail-label">근무지</span>
-                          <span className="detail-value">{selectedEmployee.workplace || '서울역 홀'}</span>
-                        </div>
-                        <div className="detail-item">
-                          <span className="detail-label">PIN</span>
-                          <span className="detail-value">{selectedEmployee.pin || '-'}</span>
+                  {editingEmployee === selectedEmployee.id ? (
+                    // 수정 모드
+                    <div className="employee-edit-form">
+                      <div className="employee-detail-section">
+                        <h3>기본 정보</h3>
+                        <div className="employee-detail-grid">
+                          <div className="detail-item">
+                            <span className="detail-label">이름 *</span>
+                            <input
+                              type="text"
+                              value={editForm.name}
+                              onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                              placeholder="이름"
+                              style={{ 
+                                width: '100%', 
+                                padding: '8px 12px', 
+                                borderRadius: '5px', 
+                                border: '1px solid #ddd',
+                                fontSize: '14px'
+                              }}
+                            />
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">PIN (4자리)</span>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              maxLength={4}
+                              value={editForm.pin}
+                              onChange={(e) => setEditForm({...editForm, pin: e.target.value.replace(/\D/g, '')})}
+                              placeholder="0000"
+                              style={{ 
+                                width: '100%', 
+                                padding: '8px 12px', 
+                                borderRadius: '5px', 
+                                border: '1px solid #ddd',
+                                fontSize: '14px'
+                              }}
+                            />
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">직급</span>
+                            <select
+                              value={editForm.position}
+                              onChange={(e) => setEditForm({...editForm, position: e.target.value})}
+                              style={{ 
+                                width: '100%', 
+                                padding: '8px 12px', 
+                                borderRadius: '5px', 
+                                border: '1px solid #ddd',
+                                fontSize: '14px'
+                              }}
+                            >
+                              <option value="PT">알바생 (PT)</option>
+                              <option value="정직원">정직원</option>
+                              <option value="매니저">매니저</option>
+                            </select>
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">근무지</span>
+                            <select
+                              value={editForm.workplace}
+                              onChange={(e) => setEditForm({...editForm, workplace: e.target.value})}
+                              style={{ 
+                                width: '100%', 
+                                padding: '8px 12px', 
+                                borderRadius: '5px', 
+                                border: '1px solid #ddd',
+                                fontSize: '14px'
+                              }}
+                            >
+                              <option value="서울역 홀">서울역 홀</option>
+                              <option value="서울역 주방">서울역 주방</option>
+                              <option value="목동 홀">목동 홀</option>
+                              <option value="목동 주방">목동 주방</option>
+                            </select>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="employee-detail-section">
-                      <h3>연락처 정보</h3>
-                      <div className="employee-detail-grid">
-                        <div className="detail-item">
-                          <span className="detail-label">📞 전화번호</span>
-                          <span className="detail-value">{selectedEmployee.phone || '미등록'}</span>
-                        </div>
-                        <div className="detail-item">
-                          <span className="detail-label">📧 이메일</span>
-                          <span className="detail-value">{selectedEmployee.email || '미등록'}</span>
+                      <div className="employee-detail-section">
+                        <h3>연락처 정보</h3>
+                        <div className="employee-detail-grid">
+                          <div className="detail-item">
+                            <span className="detail-label">📞 전화번호</span>
+                            <input
+                              type="tel"
+                              value={editForm.phone}
+                              onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
+                              placeholder="010-0000-0000"
+                              style={{ 
+                                width: '100%', 
+                                padding: '8px 12px', 
+                                borderRadius: '5px', 
+                                border: '1px solid #ddd',
+                                fontSize: '14px'
+                              }}
+                            />
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">📧 이메일</span>
+                            <input
+                              type="email"
+                              value={editForm.email}
+                              onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                              placeholder="email@example.com"
+                              style={{ 
+                                width: '100%', 
+                                padding: '8px 12px', 
+                                borderRadius: '5px', 
+                                border: '1px solid #ddd',
+                                fontSize: '14px'
+                              }}
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="employee-detail-section">
-                      <h3>근무 정보</h3>
-                      <div className="employee-detail-grid">
-                        <div className="detail-item">
-                          <span className="detail-label">📅 입사일</span>
-                          <span className="detail-value">{selectedEmployee.hire_date || '미등록'}</span>
-                        </div>
-                        <div className="detail-item">
-                          <span className="detail-label">💰 시급</span>
-                          <span className="detail-value">
-                            {selectedEmployee.hourly_wage ? `${selectedEmployee.hourly_wage.toLocaleString()}원` : '미등록'}
-                          </span>
+                      <div className="employee-detail-section">
+                        <h3>근무 정보</h3>
+                        <div className="employee-detail-grid">
+                          <div className="detail-item">
+                            <span className="detail-label">📅 입사일</span>
+                            <input
+                              type="date"
+                              value={editForm.hire_date}
+                              onChange={(e) => setEditForm({...editForm, hire_date: e.target.value})}
+                              style={{ 
+                                width: '100%', 
+                                padding: '8px 12px', 
+                                borderRadius: '5px', 
+                                border: '1px solid #ddd',
+                                fontSize: '14px'
+                              }}
+                            />
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">💰 시급 (원)</span>
+                            <input
+                              type="number"
+                              value={editForm.hourly_wage}
+                              onChange={(e) => setEditForm({...editForm, hourly_wage: e.target.value})}
+                              placeholder="10000"
+                              style={{ 
+                                width: '100%', 
+                                padding: '8px 12px', 
+                                borderRadius: '5px', 
+                                border: '1px solid #ddd',
+                                fontSize: '14px'
+                              }}
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {selectedEmployee.memo && (
                       <div className="employee-detail-section">
                         <h3>메모</h3>
-                        <div className="detail-memo">
-                          {selectedEmployee.memo}
+                        <textarea
+                          value={editForm.memo}
+                          onChange={(e) => setEditForm({...editForm, memo: e.target.value})}
+                          placeholder="메모를 입력하세요"
+                          rows={4}
+                          style={{ 
+                            width: '100%', 
+                            padding: '10px', 
+                            borderRadius: '5px', 
+                            border: '1px solid #ddd',
+                            fontSize: '14px',
+                            resize: 'vertical'
+                          }}
+                        />
+                      </div>
+
+                      <div className="action-buttons" style={{ marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                        <button onClick={handleSaveEmployee} className="btn-save" style={{ padding: '10px 24px', fontSize: '16px' }}>💾 저장</button>
+                        <button onClick={handleCancelEditEmployee} className="btn-cancel" style={{ padding: '10px 24px', fontSize: '16px' }}>취소</button>
+                      </div>
+                    </div>
+                  ) : (
+                    // 읽기 모드
+                    <div className="employee-detail-card">
+                      <div className="employee-detail-section">
+                        <h3>기본 정보</h3>
+                        <div className="employee-detail-grid">
+                          <div className="detail-item">
+                            <span className="detail-label">이름</span>
+                            <span className="detail-value">{selectedEmployee.name}</span>
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">직급</span>
+                            <span className="detail-value">{selectedEmployee.position || '직원'}</span>
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">근무지</span>
+                            <span className="detail-value">{selectedEmployee.workplace || '서울역 홀'}</span>
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">PIN</span>
+                            <span className="detail-value">{selectedEmployee.pin || '-'}</span>
+                          </div>
                         </div>
                       </div>
-                    )}
-                  </div>
+
+                      <div className="employee-detail-section">
+                        <h3>연락처 정보</h3>
+                        <div className="employee-detail-grid">
+                          <div className="detail-item">
+                            <span className="detail-label">📞 전화번호</span>
+                            <span className="detail-value">{selectedEmployee.phone || '미등록'}</span>
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">📧 이메일</span>
+                            <span className="detail-value">{selectedEmployee.email || '미등록'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="employee-detail-section">
+                        <h3>근무 정보</h3>
+                        <div className="employee-detail-grid">
+                          <div className="detail-item">
+                            <span className="detail-label">📅 입사일</span>
+                            <span className="detail-value">{selectedEmployee.hire_date || '미등록'}</span>
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">💰 시급</span>
+                            <span className="detail-value">
+                              {selectedEmployee.hourly_wage ? `${selectedEmployee.hourly_wage.toLocaleString()}원` : '미등록'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {selectedEmployee.memo && (
+                        <div className="employee-detail-section">
+                          <h3>메모</h3>
+                          <div className="detail-memo">
+                            {selectedEmployee.memo}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="action-buttons" style={{ marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                        <button 
+                          onClick={() => handleEditEmployee(selectedEmployee)} 
+                          className="btn-edit"
+                          style={{ padding: '10px 24px', fontSize: '16px' }}
+                        >
+                          ✏️ 수정
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
