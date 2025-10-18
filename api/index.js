@@ -70,6 +70,8 @@ const getCurrentTimeKST = () => {
 // Calculate work hours
 function calculateWorkHours(startTime, endTime) {
   try {
+    console.log(`[calculateWorkHours] Input - start: ${startTime}, end: ${endTime}`);
+    
     // Handle both HH:mm:ss and HH:mm formats
     const startParts = startTime.split(':');
     const endParts = endTime.split(':');
@@ -79,8 +81,10 @@ function calculateWorkHours(startTime, endTime) {
     const endHour = parseInt(endParts[0], 10);
     const endMin = parseInt(endParts[1], 10);
     
+    console.log(`[calculateWorkHours] Parsed - startHour: ${startHour}, startMin: ${startMin}, endHour: ${endHour}, endMin: ${endMin}`);
+    
     if (isNaN(startHour) || isNaN(startMin) || isNaN(endHour) || isNaN(endMin)) {
-      console.error(`Invalid time format - start: ${startTime}, end: ${endTime}`);
+      console.error(`[calculateWorkHours] Invalid time format - start: ${startTime}, end: ${endTime}`);
       return 0;
     }
     
@@ -88,29 +92,38 @@ function calculateWorkHours(startTime, endTime) {
     const endMinutes = endHour * 60 + endMin;
     let diffMinutes = endMinutes - startMinutes;
     
+    console.log(`[calculateWorkHours] Minutes - start: ${startMinutes}, end: ${endMinutes}, diff: ${diffMinutes}`);
+    
     // Handle overnight shifts
     if (diffMinutes < 0) {
       diffMinutes += 24 * 60;
+      console.log(`[calculateWorkHours] Overnight shift detected, adjusted diff: ${diffMinutes}`);
     }
     
     // 휴게시간 15:00~17:00 (900분~1020분) 체크
-    const breakStart = 15 * 60;
-    const breakEnd = 17 * 60;
+    const breakStart = 15 * 60; // 900
+    const breakEnd = 17 * 60;   // 1020
     
-    if (startMinutes < breakEnd && endMinutes > breakStart) {
+    // 야간 근무가 아닌 경우에만 휴게시간 체크
+    if (diffMinutes < 24 * 60 && startMinutes < breakEnd && endMinutes > breakStart) {
       const overlapStart = Math.max(startMinutes, breakStart);
       const overlapEnd = Math.min(endMinutes, breakEnd);
       const overlapMinutes = overlapEnd - overlapStart;
+      console.log(`[calculateWorkHours] Break time overlap: ${overlapMinutes} minutes`);
       diffMinutes -= overlapMinutes;
     }
     
     const hours = Math.floor(diffMinutes / 60);
     const minutes = diffMinutes % 60;
     const roundedMinutes = minutes >= 30 ? 0.5 : 0;
+    const totalHours = hours + roundedMinutes;
     
-    return hours + roundedMinutes;
+    console.log(`[calculateWorkHours] Result - total minutes: ${diffMinutes}, hours: ${hours}, rounded minutes: ${roundedMinutes}, total: ${totalHours}`);
+    
+    return totalHours;
   } catch (error) {
-    console.error('Error calculating work hours:', error);
+    console.error('[calculateWorkHours] Error:', error);
+    console.error('[calculateWorkHours] Stack:', error.stack);
     return 0;
   }
 }
