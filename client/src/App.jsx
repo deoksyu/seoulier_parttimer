@@ -240,22 +240,31 @@ function App() {
   // Clock in
   const handleClockIn = async () => {
     try {
+      console.log('Clock in request - userId:', user.id);
       const response = await axios.post(`${API_URL}/clock-in`, { userId: user.id });
+      console.log('Clock in response:', response.data);
+      
       if (response.data.success) {
         setMessage('출근 처리되었습니다!');
         loadShifts();
         setTimeout(() => setMessage(''), 3000);
       }
     } catch (error) {
-      setMessage(error.response?.data?.message || '출근 처리 실패');
-      setTimeout(() => setMessage(''), 3000);
+      console.error('Clock in error:', error);
+      console.error('Error response:', error.response?.data);
+      const errorMsg = error.response?.data?.message || '출근 처리 실패: ' + (error.message || '서버 오류');
+      setMessage(errorMsg);
+      setTimeout(() => setMessage(''), 5000);
     }
   };
 
   // Clock out
   const handleClockOut = async () => {
     try {
+      console.log('Clock out request - userId:', user.id);
       const response = await axios.post(`${API_URL}/clock-out`, { userId: user.id });
+      console.log('Clock out response:', response.data);
+      
       if (response.data.success) {
         setMessage('퇴근 처리되었습니다! 10초 후 자동 로그아웃됩니다.');
         loadShifts();
@@ -267,8 +276,11 @@ function App() {
         setAutoLogoutTimer(timer);
       }
     } catch (error) {
-      setMessage(error.response?.data?.message || '퇴근 처리 실패');
-      setTimeout(() => setMessage(''), 3000);
+      console.error('Clock out error:', error);
+      console.error('Error response:', error.response?.data);
+      const errorMsg = error.response?.data?.message || '퇴근 처리 실패: ' + (error.message || '서버 오류');
+      setMessage(errorMsg);
+      setTimeout(() => setMessage(''), 5000);
     }
   };
 
@@ -288,6 +300,8 @@ function App() {
       }
     } catch (error) {
       console.error('Failed to load shifts:', error);
+      console.error('Error response:', error.response?.data);
+      // Don't show error message to user for background loads
     }
   };
 

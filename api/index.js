@@ -33,10 +33,15 @@ const pool = new Pool({
   ssl: {
     rejectUnauthorized: false
   },
-  max: 1, // Limit connections for serverless (important!)
+  max: 3, // Increased for better concurrency (was 1)
   idleTimeoutMillis: 30000, // Close idle connections after 30s
   connectionTimeoutMillis: 10000, // Timeout after 10s
   allowExitOnIdle: true // Allow process to exit when idle
+});
+
+// Log pool errors
+pool.on('error', (err) => {
+  console.error('Unexpected database pool error:', err);
 });
 
 // Helper function to query database
@@ -52,31 +57,62 @@ const getTodayKST = () => {
   return `${year}-${month}-${day}`;
 };
 
+// Get current time in Korea timezone (HH:mm:ss)
+const getCurrentTimeKST = () => {
+  const now = new Date();
+  const kstDate = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+  const hours = String(kstDate.getHours()).padStart(2, '0');
+  const minutes = String(kstDate.getMinutes()).padStart(2, '0');
+  const seconds = String(kstDate.getSeconds()).padStart(2, '0');
+  return `${hours}:${minutes}:${seconds}`;
+};
+
 // Calculate work hours
 function calculateWorkHours(startTime, endTime) {
-  const [startHour, startMin] = startTime.split(':').map(Number);
-  const [endHour, endMin] = endTime.split(':').map(Number);
-  
-  const startMinutes = startHour * 60 + startMin;
-  const endMinutes = endHour * 60 + endMin;
-  let diffMinutes = endMinutes - startMinutes;
-  
-  // 휴게시간 15:00~17:00 (900분~1020분) 체크
-  const breakStart = 15 * 60;
-  const breakEnd = 17 * 60;
-  
-  if (startMinutes < breakEnd && endMinutes > breakStart) {
-    const overlapStart = Math.max(startMinutes, breakStart);
-    const overlapEnd = Math.min(endMinutes, breakEnd);
-    const overlapMinutes = overlapEnd - overlapStart;
-    diffMinutes -= overlapMinutes;
+  try {
+    // Handle both HH:mm:ss and HH:mm formats
+    const startParts = startTime.split(':');
+    const endParts = endTime.split(':');
+    
+    const startHour = parseInt(startParts[0], 10);
+    const startMin = parseInt(startParts[1], 10);
+    const endHour = parseInt(endParts[0], 10);
+    const endMin = parseInt(endParts[1], 10);
+    
+    if (isNaN(startHour) || isNaN(startMin) || isNaN(endHour) || isNaN(endMin)) {
+      console.error(`Invalid time format - start: ${startTime}, end: ${endTime}`);
+      return 0;
+    }
+    
+    const startMinutes = startHour * 60 + startMin;
+    const endMinutes = endHour * 60 + endMin;
+    let diffMinutes = endMinutes - startMinutes;
+    
+    // Handle overnight shifts
+    if (diffMinutes < 0) {
+      diffMinutes += 24 * 60;
+    }
+    
+    // 휴게시간 15:00~17:00 (900분~1020분) 체크
+    const breakStart = 15 * 60;
+    const breakEnd = 17 * 60;
+    
+    if (startMinutes < breakEnd && endMinutes > breakStart) {
+      const overlapStart = Math.max(startMinutes, breakStart);
+      const overlapEnd = Math.min(endMinutes, breakEnd);
+      const overlapMinutes = overlapEnd - overlapStart;
+      diffMinutes -= overlapMinutes;
+    }
+    
+    const hours = Math.floor(diffMinutes / 60);
+    const minutes = diffMinutes % 60;
+    const roundedMinutes = minutes >= 30 ? 0.5 : 0;
+    
+    return hours + roundedMinutes;
+  } catch (error) {
+    console.error('Error calculating work hours:', error);
+    return 0;
   }
-  
-  const hours = Math.floor(diffMinutes / 60);
-  const minutes = diffMinutes % 60;
-  const roundedMinutes = minutes >= 30 ? 0.5 : 0;
-  
-  return hours + roundedMinutes;
 }
 
 // API Routes
@@ -125,8 +161,16 @@ app.post('/api/login-pin', async (req, res) => {
 app.post('/api/clock-in', async (req, res) => {
   try {
     const { userId } = req.body;
+    
+    if (!userId) {
+      console.error('Clock in error: Missing userId');
+      return res.status(400).json({ success: false, message: '사용자 ID가 필요합니다' });
+    }
+    
     const date = getTodayKST();
-    const time = new Date().toLocaleTimeString('ko-KR', { hour12: false, timeZone: 'Asia/Seoul' });
+    const time = getCurrentTimeKST();
+    
+    console.log(`Clock in attempt - userId: ${userId}, date: ${date}, time: ${time}`);
     
     const checkResult = await query(
       'SELECT * FROM shifts WHERE user_id = $1 AND date = $2 AND end_time IS NULL',
@@ -134,6 +178,7 @@ app.post('/api/clock-in', async (req, res) => {
     );
     
     if (checkResult.rows.length > 0) {
+      console.log(`Clock in failed - already clocked in: userId ${userId}`);
       return res.status(400).json({ success: false, message: '이미 출근 처리되었습니다' });
     }
     
@@ -141,6 +186,8 @@ app.post('/api/clock-in', async (req, res) => {
       'INSERT INTO shifts (user_id, date, start_time) VALUES ($1, $2, $3) RETURNING id',
       [userId, date, time]
     );
+    
+    console.log(`Clock in success - shiftId: ${result.rows[0].id}, userId: ${userId}`);
     
     res.json({
       success: true,
@@ -152,7 +199,12 @@ app.post('/api/clock-in', async (req, res) => {
     });
   } catch (error) {
     console.error('Clock in error:', error);
-    res.status(500).json({ success: false, message: 'Database error' });
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Database error',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
@@ -160,8 +212,16 @@ app.post('/api/clock-in', async (req, res) => {
 app.post('/api/clock-out', async (req, res) => {
   try {
     const { userId } = req.body;
+    
+    if (!userId) {
+      console.error('Clock out error: Missing userId');
+      return res.status(400).json({ success: false, message: '사용자 ID가 필요합니다' });
+    }
+    
     const date = getTodayKST();
-    const time = new Date().toLocaleTimeString('ko-KR', { hour12: false, timeZone: 'Asia/Seoul' });
+    const time = getCurrentTimeKST();
+    
+    console.log(`Clock out attempt - userId: ${userId}, date: ${date}, time: ${time}`);
     
     const result = await query(
       'SELECT * FROM shifts WHERE user_id = $1 AND date = $2 AND end_time IS NULL',
@@ -169,16 +229,22 @@ app.post('/api/clock-out', async (req, res) => {
     );
     
     if (result.rows.length === 0) {
+      console.log(`Clock out failed - no active shift: userId ${userId}`);
       return res.status(400).json({ success: false, message: '출근 기록이 없습니다' });
     }
     
     const shift = result.rows[0];
+    console.log(`Found active shift - shiftId: ${shift.id}, start_time: ${shift.start_time}`);
+    
     const workHours = calculateWorkHours(shift.start_time, time);
+    console.log(`Calculated work hours: ${workHours}`);
     
     await query(
       'UPDATE shifts SET end_time = $1, work_hours = $2 WHERE id = $3',
       [time, workHours, shift.id]
     );
+    
+    console.log(`Clock out success - shiftId: ${shift.id}, userId: ${userId}, workHours: ${workHours}`);
     
     res.json({
       success: true,
@@ -192,7 +258,12 @@ app.post('/api/clock-out', async (req, res) => {
     });
   } catch (error) {
     console.error('Clock out error:', error);
-    res.status(500).json({ success: false, message: 'Database error' });
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Database error',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
