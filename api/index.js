@@ -460,9 +460,12 @@ app.put('/api/employees/:id', async (req, res) => {
     const { id } = req.params;
     const { name, phone, email, hire_date, hourly_wage, memo, pin, position, workplace, regular_start_time, health_certificate_expiry } = req.body;
     
+    // Convert empty strings to null for numeric fields
+    const parsedHourlyWage = hourly_wage === '' || hourly_wage === null ? null : parseInt(hourly_wage, 10);
+    
     await query(
       'UPDATE users SET name = $1, phone = $2, email = $3, hire_date = $4, hourly_wage = $5, memo = $6, pin = $7, position = $8, workplace = $9, regular_start_time = $10, health_certificate_expiry = $11 WHERE id = $12',
-      [name, phone, email, hire_date, hourly_wage, memo, pin, position, workplace, regular_start_time, health_certificate_expiry, id]
+      [name, phone, email, hire_date, parsedHourlyWage, memo, pin, position, workplace, regular_start_time || null, health_certificate_expiry || null, id]
     );
     
     res.json({ success: true, message: '수정되었습니다' });
