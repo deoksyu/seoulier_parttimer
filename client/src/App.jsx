@@ -1495,17 +1495,19 @@ function App() {
                       {shift.is_modified && <span className="modified-badge">✏️ 수정됨</span>}
                     </td>
                     <td>
-                      {shift.start_time}
-                      {shift.is_late && !shift.late_exempt && (
-                        <div className="late-badge">
-                          ⚠️ {shift.late_minutes}분 지각
-                        </div>
-                      )}
-                      {shift.late_exempt && (
-                        <div className="exempt-badge">
-                          ✓ 지각 면제
-                        </div>
-                      )}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>{shift.start_time}</span>
+                        {shift.is_late && !shift.late_exempt && (
+                          <span className="late-badge">
+                            ⚠️ {shift.late_minutes}분 지각
+                          </span>
+                        )}
+                        {shift.late_exempt && (
+                          <span className="exempt-badge">
+                            ✓ 지각 면제
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td>{shift.end_time || '-'}</td>
                     <td>{shift.work_hours ? `${shift.work_hours}시간` : '-'}</td>

@@ -558,7 +558,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 }
 
 .stat-card {
-  background: white;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 10px;
   padding: 20px;
   display: flex;
@@ -574,12 +574,12 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 }
 
 .stat-card.warning {
-  background: #fff5f5;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
   border: 2px solid #ffebee;
 }
 
 .stat-card.warning .stat-value {
-  color: #d32f2f;
+  color: white;
   font-weight: bold;
 }
 
@@ -594,7 +594,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 .stat-label {
   font-size: 14px;
-  color: #666;
+  color: white;
   margin-bottom: 5px;
   font-weight: 500;
 }
@@ -602,7 +602,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 .stat-value {
   font-size: 28px;
   font-weight: bold;
-  color: #333;
+  color: white;
   line-height: 1.2;
 }
 
@@ -614,7 +614,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 .late-badge {
   display: inline-block;
-  margin-top: 5px;
   padding: 4px 10px;
   background-color: #ffebee;
   color: #d32f2f;
@@ -622,11 +621,11 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   font-size: 12px;
   font-weight: bold;
   border: 1px solid #ffcdd2;
+  white-space: nowrap;
 }
 
 .exempt-badge {
   display: inline-block;
-  margin-top: 5px;
   padding: 4px 10px;
   background-color: #e8f5e9;
   color: #2e7d32;
@@ -634,6 +633,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   font-size: 12px;
   font-weight: bold;
   border: 1px solid #c8e6c9;
+  white-space: nowrap;
 }
 
 /* Responsive Stats Cards */
