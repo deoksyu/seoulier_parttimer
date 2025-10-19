@@ -1414,6 +1414,40 @@ function App() {
           </div>
         </div>
 
+        {/* 통계 카드 */}
+        <div className="employee-stats">
+          <div className="stat-card">
+            <div className="stat-icon">📅</div>
+            <div className="stat-content">
+              <div className="stat-label">이번 달 출근</div>
+              <div className="stat-value">{shifts.filter(s => s.date.startsWith(selectedMonth)).length}일</div>
+            </div>
+          </div>
+          
+          <div className="stat-card">
+            <div className="stat-icon">⏰</div>
+            <div className="stat-content">
+              <div className="stat-label">총 근무시간</div>
+              <div className="stat-value">
+                {shifts
+                  .filter(s => s.date.startsWith(selectedMonth))
+                  .reduce((sum, s) => sum + (Number(s.work_hours) || 0), 0)
+                  .toFixed(1)}시간
+              </div>
+            </div>
+          </div>
+          
+          <div className={`stat-card ${shifts.filter(s => s.is_late && !s.late_exempt && s.date.startsWith(selectedMonth)).length > 0 ? 'warning' : ''}`}>
+            <div className="stat-icon">⚠️</div>
+            <div className="stat-content">
+              <div className="stat-label">지각 횟수</div>
+              <div className="stat-value">
+                {shifts.filter(s => s.is_late && !s.late_exempt && s.date.startsWith(selectedMonth)).length}회
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="shifts-section">
           <div className="section-header">
             <h2>📊 내 근무 내역</h2>
@@ -1452,12 +1486,27 @@ function App() {
                 </tr>
               ) : (
                 shifts.map(shift => (
-                  <tr key={shift.id} className={shift.is_modified ? 'modified-row' : ''}>
+                  <tr 
+                    key={shift.id} 
+                    className={`${shift.is_modified ? 'modified-row' : ''} ${shift.is_late && !shift.late_exempt ? 'late-row' : ''}`}
+                  >
                     <td>
                       {shift.date}
                       {shift.is_modified && <span className="modified-badge">✏️ 수정됨</span>}
                     </td>
-                    <td>{shift.start_time}</td>
+                    <td>
+                      {shift.start_time}
+                      {shift.is_late && !shift.late_exempt && (
+                        <div className="late-badge">
+                          ⚠️ {shift.late_minutes}분 지각
+                        </div>
+                      )}
+                      {shift.late_exempt && (
+                        <div className="exempt-badge">
+                          ✓ 지각 면제
+                        </div>
+                      )}
+                    </td>
                     <td>{shift.end_time || '-'}</td>
                     <td>{shift.work_hours ? `${shift.work_hours}시간` : '-'}</td>
                     <td>
