@@ -387,11 +387,42 @@ app.put('/api/shifts/:id/approve', async (req, res) => {
 app.put('/api/shifts/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { start_time, end_time, work_hours } = req.body;
+    const { start_time, end_time, work_hours, late_exempt, late_note } = req.body;
+    
+    // Get shift info to recalculate late status if start_time changed
+    const shiftResult = await query('SELECT user_id, date FROM shifts WHERE id = $1', [id]);
+    const shift = shiftResult.rows[0];
+    
+    let isLate = 0;
+    let lateMinutes = 0;
+    
+    // Recalculate late status if start_time is provided
+    if (shift && start_time) {
+      const userResult = await query('SELECT regular_start_time FROM users WHERE id = $1', [shift.user_id]);
+      const user = userResult.rows[0];
+      
+      if (user && user.regular_start_time) {
+        const regularParts = user.regular_start_time.split(':');
+        const actualParts = start_time.split(':');
+        
+        const regularHour = parseInt(regularParts[0]);
+        const regularMin = parseInt(regularParts[1]);
+        const actualHour = parseInt(actualParts[0]);
+        const actualMin = parseInt(actualParts[1]);
+        
+        const regularMinutes = regularHour * 60 + regularMin;
+        const actualMinutes = actualHour * 60 + actualMin;
+        
+        if (actualMinutes > regularMinutes) {
+          isLate = 1;
+          lateMinutes = actualMinutes - regularMinutes;
+        }
+      }
+    }
     
     await query(
-      'UPDATE shifts SET start_time = $1, end_time = $2, work_hours = $3, is_modified = 1 WHERE id = $4',
-      [start_time, end_time, work_hours, id]
+      'UPDATE shifts SET start_time = $1, end_time = $2, work_hours = $3, is_modified = 1, is_late = $4, late_minutes = $5, late_exempt = $6, late_note = $7 WHERE id = $8',
+      [start_time, end_time, work_hours, isLate, lateMinutes, late_exempt || 0, late_note || null, id]
     );
     
     res.json({
