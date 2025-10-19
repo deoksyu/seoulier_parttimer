@@ -510,11 +510,43 @@ app.get('/api/statistics', async (req, res) => {
         u.name,
         u.username,
         COUNT(DISTINCT s.date) as shift_count,
-        COALESCE(SUM(CASE WHEN s.work_hours IS NOT NULL THEN s.work_hours ELSE 0 END), 0) as total_hours,
-        COALESCE(SUM(CASE WHEN s.status = 'approved' AND s.work_hours IS NOT NULL THEN s.work_hours ELSE 0 END), 0) as approved_hours
+        COALESCE(
+          SUM(
+            CASE 
+              WHEN s.end_time IS NOT NULL AND s.start_time IS NOT NULL THEN 
+                ROUND(
+                  EXTRACT(EPOCH FROM (
+                    (s.date || ' ' || s.end_time)::timestamp - 
+                    (s.date || ' ' || s.start_time)::timestamp
+                  )) / 3600.0, 
+                  1
+                )
+              WHEN s.work_hours IS NOT NULL THEN s.work_hours
+              ELSE 0 
+            END
+          ), 
+          0
+        ) as total_hours,
+        COALESCE(
+          SUM(
+            CASE 
+              WHEN s.status = 'approved' AND s.end_time IS NOT NULL AND s.start_time IS NOT NULL THEN 
+                ROUND(
+                  EXTRACT(EPOCH FROM (
+                    (s.date || ' ' || s.end_time)::timestamp - 
+                    (s.date || ' ' || s.start_time)::timestamp
+                  )) / 3600.0, 
+                  1
+                )
+              WHEN s.status = 'approved' AND s.work_hours IS NOT NULL THEN s.work_hours
+              ELSE 0 
+            END
+          ), 
+          0
+        ) as approved_hours
       FROM users u
       LEFT JOIN shifts s ON u.id = s.user_id
-      WHERE u.role = 'staff'
+      WHERE u.role = 'staff' AND (u.is_active = 1 OR u.is_active IS NULL)
     `;
     
     const params = [];
