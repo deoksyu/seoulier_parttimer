@@ -538,12 +538,16 @@ app.post('/api/employees', async (req, res) => {
     } = req.body;
     
     // Validation
-    if (!username || !password || !name || !pin) {
+    if (!name || !pin) {
       return res.status(400).json({ 
         success: false, 
-        message: '필수 항목을 입력해주세요 (이름, 아이디, 비밀번호, PIN)' 
+        message: '필수 항목을 입력해주세요 (이름, PIN)' 
       });
     }
+    
+    // Auto-generate username if not provided
+    const finalUsername = username || `emp_${Date.now()}`;
+    const finalPassword = password || pin;
     
     // PIN validation (4 digits)
     if (!/^\d{4}$/.test(pin)) {
@@ -553,16 +557,18 @@ app.post('/api/employees', async (req, res) => {
       });
     }
     
-    // Check duplicate username
-    const usernameCheck = await query(
-      'SELECT id FROM users WHERE username = $1',
-      [username]
-    );
-    if (usernameCheck.rows.length > 0) {
-      return res.status(400).json({ 
-        success: false, 
-        message: '이미 사용 중인 아이디입니다' 
-      });
+    // Check duplicate username (only if provided)
+    if (username) {
+      const usernameCheck = await query(
+        'SELECT id FROM users WHERE username = $1',
+        [username]
+      );
+      if (usernameCheck.rows.length > 0) {
+        return res.status(400).json({ 
+          success: false, 
+          message: '이미 사용 중인 아이디입니다' 
+        });
+      }
     }
     
     // Check duplicate PIN
@@ -588,7 +594,7 @@ app.post('/api/employees', async (req, res) => {
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 1)
       RETURNING id`,
       [
-        username, password, name, 'staff', pin,
+        finalUsername, finalPassword, name, 'staff', pin,
         phone || null, email || null, position || '직원', workplace || '서울역 홀',
         hire_date || null, hourly_wage || 10000,
         regular_start_time || null, health_certificate_expiry || null,

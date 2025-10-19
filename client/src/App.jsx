@@ -2910,8 +2910,8 @@ function App() {
                 const formData = new FormData(e.target);
                 const newEmployee = {
                   name: formData.get('name'),
-                  username: formData.get('username'),
-                  password: formData.get('password'),
+                  username: `emp_${Date.now()}`,
+                  password: formData.get('pin'),
                   pin: formData.get('pin'),
                   phone: formData.get('phone'),
                   email: formData.get('email'),
@@ -2941,16 +2941,8 @@ function App() {
                     <input type="text" name="name" required style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }} />
                   </div>
                   <div>
-                    <label style={{ fontWeight: 'bold', marginBottom: '5px', display: 'block' }}>아이디 *</label>
-                    <input type="text" name="username" required style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }} />
-                  </div>
-                  <div>
-                    <label style={{ fontWeight: 'bold', marginBottom: '5px', display: 'block' }}>비밀번호 *</label>
-                    <input type="password" name="password" required style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }} />
-                  </div>
-                  <div>
                     <label style={{ fontWeight: 'bold', marginBottom: '5px', display: 'block' }}>PIN (4자리) *</label>
-                    <input type="text" name="pin" required pattern="\\d{4}" maxLength="4" placeholder="0000" style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }} />
+                    <input type="text" name="pin" required pattern="[0-9]{4}" maxLength="4" placeholder="0000" title="4자리 숫자를 입력하세요" style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }} />
                   </div>
                   <div>
                     <label style={{ fontWeight: 'bold', marginBottom: '5px', display: 'block' }}>전화번호</label>
