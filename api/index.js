@@ -422,7 +422,7 @@ app.get('/api/statistics', async (req, res) => {
 app.get('/api/employees', async (req, res) => {
   try {
     const result = await query(
-      'SELECT id, username, name, role, pin, phone, email, hire_date, hourly_wage, memo, position, workplace FROM users WHERE role != $1 ORDER BY name',
+      'SELECT id, username, name, role, pin, phone, email, hire_date, hourly_wage, memo, position, workplace, regular_start_time, health_certificate_expiry FROM users WHERE role != $1 ORDER BY name',
       ['admin']
     );
     
@@ -439,7 +439,7 @@ app.get('/api/employees/:id', async (req, res) => {
     const { id } = req.params;
     
     const result = await query(
-      'SELECT id, username, name, role, pin, phone, email, hire_date, hourly_wage, memo, position, workplace FROM users WHERE id = $1',
+      'SELECT id, username, name, role, pin, phone, email, hire_date, hourly_wage, memo, position, workplace, regular_start_time, health_certificate_expiry FROM users WHERE id = $1',
       [id]
     );
     
@@ -458,11 +458,11 @@ app.get('/api/employees/:id', async (req, res) => {
 app.put('/api/employees/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, phone, email, hire_date, hourly_wage, memo, pin, position, workplace } = req.body;
+    const { name, phone, email, hire_date, hourly_wage, memo, pin, position, workplace, regular_start_time, health_certificate_expiry } = req.body;
     
     await query(
-      'UPDATE users SET name = $1, phone = $2, email = $3, hire_date = $4, hourly_wage = $5, memo = $6, pin = $7, position = $8, workplace = $9 WHERE id = $10',
-      [name, phone, email, hire_date, hourly_wage, memo, pin, position, workplace, id]
+      'UPDATE users SET name = $1, phone = $2, email = $3, hire_date = $4, hourly_wage = $5, memo = $6, pin = $7, position = $8, workplace = $9, regular_start_time = $10, health_certificate_expiry = $11 WHERE id = $12',
+      [name, phone, email, hire_date, hourly_wage, memo, pin, position, workplace, regular_start_time, health_certificate_expiry, id]
     );
     
     res.json({ success: true, message: '수정되었습니다' });
