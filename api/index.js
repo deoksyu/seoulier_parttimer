@@ -770,12 +770,14 @@ app.get('/api/admin-cleaning-stats', async (req, res) => {
     
     res.json({
       success: true,
-      stats: {
-        dailyStats: statsResult.rows,
-        monthlyCompletionRate,
-        consecutiveDays,
-        totalTasks
-      }
+      stats: statsResult.rows.map(stat => ({
+        ...stat,
+        total_tasks: totalTasks,
+        completed_count: parseInt(stat.completed_count),
+        completion_rate: parseInt(stat.completion_rate)
+      })),
+      monthlyCompletionRate,
+      consecutiveDays
     });
   } catch (error) {
     console.error('Get admin cleaning stats error:', error);
