@@ -147,6 +147,7 @@ function App() {
   const [employees, setEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
+  const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
   const [workplaceFilter, setWorkplaceFilter] = useState('all'); // 근무지 필터
   const [adminWeeklyTasks, setAdminWeeklyTasks] = useState([]);
   const [adminMonthlyTasks, setAdminMonthlyTasks] = useState([]);
@@ -2387,8 +2388,23 @@ function App() {
       {adminTab === 'hr' && (
         <div className="hr-dashboard">
           <div className="shifts-section">
-            <div className="section-header">
+            <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2>👥 직원 관리</h2>
+              <button
+                onClick={() => setShowAddEmployeeModal(true)}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 'bold'
+                }}
+              >
+                + 직원 추가
+              </button>
             </div>
             
             {/* 근무지 필터 */}
@@ -2437,6 +2453,7 @@ function App() {
                   <th>입사일</th>
                   <th>시급</th>
                   <th style={{ width: '100px', textAlign: 'right' }}>보건증 만료</th>
+                  <th style={{ width: '80px', textAlign: 'center' }}>삭제</th>
                 </tr>
               </thead>
               <tbody>
@@ -2503,6 +2520,34 @@ function App() {
                             ⚠️ {daysUntilExpiry}일
                           </span>
                         ) : null}
+                      </td>
+                      <td style={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={async () => {
+                            if (confirm(`'${emp.name}' 직원을 삭제하시겠습니까?\n\n⚠️ 주의: 삭제된 직원의 근무 기록은 유지되지만, 더 이상 로그인할 수 없습니다.`)) {
+                              try {
+                                const response = await axios.delete(`${API_URL}/employees/${emp.id}`);
+                                if (response.data.success) {
+                                  alert(response.data.message);
+                                  loadEmployees(); // 직원 목록 새로고침
+                                }
+                              } catch (error) {
+                                alert(error.response?.data?.message || '직원 삭제에 실패했습니다');
+                              }
+                            }
+                          }}
+                          style={{
+                            padding: '6px 12px',
+                            backgroundColor: '#dc3545',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}
+                        >
+                          삭제
+                        </button>
                       </td>
                     </tr>
                     );
@@ -2848,6 +2893,118 @@ function App() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* 직원 추가 모달 */}
+      {showAddEmployeeModal && (
+        <div className="modal-overlay" onClick={() => setShowAddEmployeeModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div className="modal-header">
+              <h2>새 직원 추가</h2>
+              <button className="close-button" onClick={() => setShowAddEmployeeModal(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const newEmployee = {
+                  name: formData.get('name'),
+                  username: formData.get('username'),
+                  password: formData.get('password'),
+                  pin: formData.get('pin'),
+                  phone: formData.get('phone'),
+                  email: formData.get('email'),
+                  position: formData.get('position'),
+                  workplace: formData.get('workplace'),
+                  hire_date: formData.get('hire_date'),
+                  hourly_wage: formData.get('hourly_wage'),
+                  regular_start_time: formData.get('regular_start_time'),
+                  health_certificate_expiry: formData.get('health_certificate_expiry'),
+                  memo: formData.get('memo')
+                };
+
+                try {
+                  const response = await axios.post(`${API_URL}/employees`, newEmployee);
+                  if (response.data.success) {
+                    alert(response.data.message);
+                    setShowAddEmployeeModal(false);
+                    loadEmployees(); // 직원 목록 새로고침
+                  }
+                } catch (error) {
+                  alert(error.response?.data?.message || '직원 추가에 실패했습니다');
+                }
+              }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                  <div>
+                    <label style={{ fontWeight: 'bold', marginBottom: '5px', display: 'block' }}>이름 *</label>
+                    <input type="text" name="name" required style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontWeight: 'bold', marginBottom: '5px', display: 'block' }}>아이디 *</label>
+                    <input type="text" name="username" required style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontWeight: 'bold', marginBottom: '5px', display: 'block' }}>비밀번호 *</label>
+                    <input type="password" name="password" required style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontWeight: 'bold', marginBottom: '5px', display: 'block' }}>PIN (4자리) *</label>
+                    <input type="text" name="pin" required pattern="\\d{4}" maxLength="4" placeholder="0000" style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontWeight: 'bold', marginBottom: '5px', display: 'block' }}>전화번호</label>
+                    <input type="tel" name="phone" style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontWeight: 'bold', marginBottom: '5px', display: 'block' }}>이메일</label>
+                    <input type="email" name="email" style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontWeight: 'bold', marginBottom: '5px', display: 'block' }}>직급</label>
+                    <input type="text" name="position" defaultValue="직원" style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontWeight: 'bold', marginBottom: '5px', display: 'block' }}>근무지</label>
+                    <select name="workplace" defaultValue="서울역 홀" style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}>
+                      <option value="서울역 홀">서울역 홀</option>
+                      <option value="서울역 주방">서울역 주방</option>
+                      <option value="목동 홀">목동 홀</option>
+                      <option value="목동 주방">목동 주방</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontWeight: 'bold', marginBottom: '5px', display: 'block' }}>입사일</label>
+                    <input type="date" name="hire_date" style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontWeight: 'bold', marginBottom: '5px', display: 'block' }}>시급 (원)</label>
+                    <input type="number" name="hourly_wage" defaultValue="10000" style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontWeight: 'bold', marginBottom: '5px', display: 'block' }}>정규 출근 시간</label>
+                    <input type="time" name="regular_start_time" style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontWeight: 'bold', marginBottom: '5px', display: 'block' }}>보건증 만료일</label>
+                    <input type="date" name="health_certificate_expiry" style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontWeight: 'bold', marginBottom: '5px', display: 'block' }}>메모</label>
+                    <textarea name="memo" rows="3" style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}></textarea>
+                  </div>
+                </div>
+                <div style={{ marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                  <button type="button" onClick={() => setShowAddEmployeeModal(false)} style={{ padding: '10px 20px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
+                    취소
+                  </button>
+                  <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
+                    추가하기
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
       )}
     </div>
