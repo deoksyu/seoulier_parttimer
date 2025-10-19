@@ -1860,7 +1860,7 @@ function App() {
                           </td>
                           <td><strong>{editingShift.work_hours}시간</strong></td>
                           <td>
-                            {shift.is_late === 1 && shift.late_exempt !== 1 && shift.late_minutes > 0 ? (
+                            {shift.is_late === 1 && shift.late_exempt !== 1 ? (
                               <span style={{ color: '#dc3545', fontWeight: 'bold' }}>
                                 ⚠️ {shift.late_minutes}분
                               </span>
@@ -1945,7 +1945,7 @@ function App() {
                           <td>{shift.end_time || '-'}</td>
                           <td><strong>{shift.work_hours ? `${shift.work_hours}시간` : '-'}</strong></td>
                           <td>
-                            {shift.is_late === 1 && shift.late_exempt !== 1 && shift.late_minutes > 0 ? (
+                            {shift.is_late === 1 && shift.late_exempt !== 1 ? (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
                                 <span style={{ color: '#dc3545', fontWeight: 'bold' }}>
                                   ⚠️ {shift.late_minutes}분
