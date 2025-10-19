@@ -435,6 +435,27 @@ app.put('/api/shifts/:id', async (req, res) => {
   }
 });
 
+// Late exempt (지각 면제)
+app.put('/api/shifts/:id/late-exempt', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { late_exempt, late_note } = req.body;
+    
+    await query(
+      'UPDATE shifts SET late_exempt = $1, late_note = $2 WHERE id = $3',
+      [late_exempt ? 1 : 0, late_note || null, id]
+    );
+    
+    res.json({
+      success: true,
+      message: late_exempt ? '지각이 면제되었습니다' : '지각 면제가 취소되었습니다'
+    });
+  } catch (error) {
+    console.error('Late exempt error:', error);
+    res.status(500).json({ success: false, message: 'Database error' });
+  }
+});
+
 // Delete shift
 app.delete('/api/shifts/:id', async (req, res) => {
   try {
