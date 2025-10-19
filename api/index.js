@@ -228,6 +228,16 @@ app.post('/api/clock-in', async (req, res) => {
         console.log('Evening shift (16:00~17:00) - No late check');
         isLate = 0;
         lateMinutes = 0;
+      } else if (actualHour >= 17) {
+        // 17:00 이후는 저녁 근무 기준(17:00)으로 지각 계산
+        const eveningStartMinutes = 17 * 60; // 17:00 = 1020분
+        if (actualMinutes > eveningStartMinutes) {
+          isLate = 1;
+          lateMinutes = actualMinutes - eveningStartMinutes;
+          console.log('LATE for evening shift! Minutes late:', lateMinutes);
+        } else {
+          console.log('On time for evening shift');
+        }
       } else if (actualMinutes > regularMinutes) {
         isLate = 1;
         lateMinutes = actualMinutes - regularMinutes;
@@ -422,6 +432,13 @@ app.put('/api/shifts/:id', async (req, res) => {
         if (actualHour === 16) {
           isLate = 0;
           lateMinutes = 0;
+        } else if (actualHour >= 17) {
+          // 17:00 이후는 저녁 근무 기준(17:00)으로 지각 계산
+          const eveningStartMinutes = 17 * 60; // 17:00 = 1020분
+          if (actualMinutes > eveningStartMinutes) {
+            isLate = 1;
+            lateMinutes = actualMinutes - eveningStartMinutes;
+          }
         } else if (actualMinutes > regularMinutes) {
           isLate = 1;
           lateMinutes = actualMinutes - regularMinutes;
