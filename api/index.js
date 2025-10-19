@@ -418,7 +418,11 @@ app.put('/api/shifts/:id', async (req, res) => {
         const regularMinutes = regularHour * 60 + regularMin;
         const actualMinutes = actualHour * 60 + actualMin;
         
-        if (actualMinutes > regularMinutes) {
+        // 저녁 근무 시간대 (16:00~17:00) 체크
+        if (actualHour === 16) {
+          isLate = 0;
+          lateMinutes = 0;
+        } else if (actualMinutes > regularMinutes) {
           isLate = 1;
           lateMinutes = actualMinutes - regularMinutes;
         }
