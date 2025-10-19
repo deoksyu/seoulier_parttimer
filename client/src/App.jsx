@@ -25,7 +25,7 @@ function DayDetailContent({ date, userId, onUpdate }) {
 
   const loadDetail = async () => {
     try {
-      const response = await axios.get(`${API_URL}/admin/cleaning-detail/${date}`);
+      const response = await axios.get(`${API_URL}/admin-cleaning-detail/${date}`);
       if (response.data.success) {
         setDetailTasks(response.data.tasks);
       }
@@ -69,8 +69,8 @@ function DayDetailContent({ date, userId, onUpdate }) {
     grouped[task.category].push(task);
   });
 
-  // Define category order (홀 first)
-  const categoryOrder = ['홀', '티카', '행주/대걸레', '기타'];
+  // Define category order (홀 first) - '기타' hidden
+  const categoryOrder = ['홀', '티카', '행주/대걸레'];
   const orderedCategories = categoryOrder.filter(cat => grouped[cat]);
 
   return (
@@ -82,11 +82,11 @@ function DayDetailContent({ date, userId, onUpdate }) {
             {grouped[category].map(task => (
               <div 
                 key={task.id} 
-                className={`detail-task-item ${task.check_id ? 'checked' : 'unchecked'} editable`}
-                onClick={() => handleToggleTask(task.id, task.check_id)}
+                className={`detail-task-item ${task.is_checked ? 'checked' : 'unchecked'} editable`}
+                onClick={() => handleToggleTask(task.id, task.is_checked)}
               >
                 <span className="task-checkbox">
-                  {task.check_id ? (task.check_level === 2 ? '🔴' : '✅') : '⬜'}
+                  {task.is_checked ? (task.check_level === 2 ? '🔴' : '✅') : '⬜'}
                 </span>
                 <span className="task-title">
                   {task.title.includes('|||') ? (
@@ -98,11 +98,16 @@ function DayDetailContent({ date, userId, onUpdate }) {
                     task.title
                   )}
                 </span>
-                {task.check_id && task.checked_at && (
+                {task.is_checked === 1 && task.checked_at && (
                   <span className="task-time">
                     {task.checked_at.includes('T') 
                       ? task.checked_at.split('T')[1].substring(0, 5)
                       : task.checked_at.substring(0, 5)}
+                  </span>
+                )}
+                {task.is_checked === 1 && task.checked_by_name && (
+                  <span className="task-checker" style={{ fontSize: '11px', color: '#666', marginLeft: '8px' }}>
+                    ({task.checked_by_name})
                   </span>
                 )}
               </div>
@@ -153,6 +158,7 @@ function App() {
   const [selectedWorkDay, setSelectedWorkDay] = useState(null);
   const [autoLogoutTimer, setAutoLogoutTimer] = useState(null); // 자동 로그아웃 타이머
   const [editingEmployee, setEditingEmployee] = useState(null); // 수정 중인 직원 ID
+  const [isCustomPosition, setIsCustomPosition] = useState(false); // 직급 수기 입력 모드
   const [editForm, setEditForm] = useState({ // 직원 수정 폼
     name: '',
     pin: '',
@@ -162,7 +168,9 @@ function App() {
     position: '',
     hire_date: '',
     hourly_wage: '',
-    memo: ''
+    memo: '',
+    regular_start_time: '',
+    health_certificate_expiry: ''
   });
 
   // Load shifts when user logs in or month/staff changes
@@ -334,22 +342,30 @@ function App() {
   // Edit employee - enter edit mode
   const handleEditEmployee = (employee) => {
     setEditingEmployee(employee.id);
+    const position = employee.position || 'PT';
+    // Check if position is custom (not PT or 사원)
+    const isCustom = position !== 'PT' && position !== '사원';
+    setIsCustomPosition(isCustom);
+    
     setEditForm({
       name: employee.name || '',
       pin: employee.pin || '',
       phone: employee.phone || '',
       email: employee.email || '',
       workplace: employee.workplace || '서울역 홀',
-      position: employee.position || 'PT',
+      position: position,
       hire_date: employee.hire_date || '',
       hourly_wage: employee.hourly_wage || '',
-      memo: employee.memo || ''
+      memo: employee.memo || '',
+      regular_start_time: employee.regular_start_time || '',
+      health_certificate_expiry: employee.health_certificate_expiry || ''
     });
   };
 
   // Cancel employee edit
   const handleCancelEditEmployee = () => {
     setEditingEmployee(null);
+    setIsCustomPosition(false);
     setEditForm({
       name: '',
       pin: '',
@@ -359,7 +375,9 @@ function App() {
       position: '',
       hire_date: '',
       hourly_wage: '',
-      memo: ''
+      memo: '',
+      regular_start_time: '',
+      health_certificate_expiry: ''
     });
   };
 
@@ -517,23 +535,33 @@ function App() {
       console.log('Response:', response.data);
       if (response.data.success) {
         setEditingShift(null);
-        loadShifts();
+        
+        // Reload shifts to get updated late status
+        const shiftsResponse = await axios.get(`${API_URL}/shifts`, {
+          params: {
+            userId: user.id,
+            role: user.role,
+            month: selectedMonth
+          }
+        });
+        
+        if (shiftsResponse.data.success) {
+          setShifts(shiftsResponse.data.shifts);
+          
+          // Update modal data with fresh data
+          if (selectedWorkDay) {
+            const updatedShifts = shiftsResponse.data.shifts.filter(
+              s => s.date === selectedWorkDay.date
+            );
+            setSelectedWorkDay({
+              ...selectedWorkDay,
+              shifts: updatedShifts
+            });
+          }
+        }
+        
         if (user.role === 'admin') {
           loadStatistics();
-        }
-        // Update modal data immediately
-        if (selectedWorkDay) {
-          setSelectedWorkDay({
-            ...selectedWorkDay,
-            shifts: selectedWorkDay.shifts.map(s => 
-              s.id === editingShift.id ? { 
-                ...s, 
-                start_time: editingShift.start_time,
-                end_time: editingShift.end_time,
-                work_hours: editingShift.work_hours
-              } : s
-            )
-          });
         }
       }
     } catch (error) {
@@ -671,18 +699,10 @@ function App() {
     }
   };
 
-  // Load weekly cleaning data
+  // Load weekly cleaning data (deprecated - using loadWeeklyTasks instead)
   const loadWeeklyChecks = async (startDate, endDate) => {
-    try {
-      const response = await axios.get(`${API_URL}/cleaning-weekly`, {
-        params: { startDate, endDate }
-      });
-      if (response.data.success) {
-        setWeeklyChecks(response.data.checks);
-      }
-    } catch (error) {
-      console.error('Failed to load weekly checks:', error);
-    }
+    // This function is no longer needed as weekly tasks are loaded via loadWeeklyTasks
+    return;
   };
 
   // Check cleaning task
@@ -872,11 +892,15 @@ function App() {
   // Load admin cleaning statistics
   const loadAdminCleaningStats = async () => {
     try {
-      const response = await axios.get(`${API_URL}/admin/cleaning-stats`, {
+      const response = await axios.get(`${API_URL}/admin-cleaning-stats`, {
         params: { month: selectedMonth }
       });
       if (response.data.success) {
-        setAdminCleaningStats(response.data.stats);
+        setAdminCleaningStats({
+          stats: response.data.stats,
+          monthlyCompletionRate: response.data.monthlyCompletionRate || 0,
+          consecutiveDays: response.data.consecutiveDays || 0
+        });
       }
     } catch (error) {
       console.error('Failed to load cleaning stats:', error);
@@ -1011,15 +1035,12 @@ function App() {
       grouped[category].push(task);
     });
     
-    // Define custom order for categories (기타는 항상 표시)
-    const categoryOrder = ['홀', '티카', '행주/대걸레', '기타'];
+    // Define custom order for categories - '기타' hidden
+    const categoryOrder = ['홀', '티카', '행주/대걸레'];
     const orderedGrouped = {};
     categoryOrder.forEach(category => {
-      // 기타 카테고리는 항목이 없어도 빈 배열로 추가
       if (grouped[category]) {
         orderedGrouped[category] = grouped[category];
-      } else if (category === '기타') {
-        orderedGrouped[category] = [];
       }
     });
     
@@ -1667,6 +1688,7 @@ function App() {
                         const isToday = dayData.date === today;
                         const totalHours = dayData.shifts.reduce((sum, shift) => sum + (shift.work_hours || 0), 0);
                         const uniqueWorkers = new Set(dayData.shifts.map(s => s.name)).size;
+                        const hasLateWorkers = dayData.shifts.some(shift => shift.is_late === 1 && shift.late_exempt !== 1);
                         
                         return (
                           <div 
@@ -1682,7 +1704,10 @@ function App() {
                               }
                             }}
                           >
-                            <div className="day-number">{dayData.day}</div>
+                            <div className="day-number">
+                              {dayData.day}
+                              {hasLateWorkers && <span className="late-indicator"></span>}
+                            </div>
                             {dayData.shifts.length > 0 && (
                               <div className="work-summary">
                                 <div className="work-count">{uniqueWorkers}명</div>
@@ -1722,6 +1747,12 @@ function App() {
                       {selectedWorkDay.shifts.reduce((sum, shift) => sum + (shift.work_hours || 0), 0).toFixed(1)}시간
                     </span>
                   </div>
+                  <div className="summary-item">
+                    <span className="summary-label">지각자:</span>
+                    <span className="summary-value" style={{ color: selectedWorkDay.shifts.filter(s => s.is_late === 1 && s.late_exempt !== 1).length > 0 ? '#dc3545' : '#28a745' }}>
+                      {selectedWorkDay.shifts.filter(s => s.is_late === 1 && s.late_exempt !== 1).length}명
+                    </span>
+                  </div>
                 </div>
                 
                 <table className="work-detail-table">
@@ -1731,6 +1762,7 @@ function App() {
                       <th>출근 시간</th>
                       <th>퇴근 시간</th>
                       <th>근무 시간</th>
+                      <th>지각</th>
                       <th>상태</th>
                       <th>관리</th>
                     </tr>
@@ -1775,6 +1807,19 @@ function App() {
                             />
                           </td>
                           <td><strong>{editingShift.work_hours}시간</strong></td>
+                          <td>
+                            {shift.is_late === 1 && shift.late_exempt !== 1 ? (
+                              <span style={{ color: '#dc3545', fontWeight: 'bold' }}>
+                                ⚠️ {shift.late_minutes}분
+                              </span>
+                            ) : shift.is_late === 1 && shift.late_exempt === 1 ? (
+                              <span style={{ color: '#6c757d', textDecoration: 'line-through' }}>
+                                면제됨
+                              </span>
+                            ) : (
+                              <span style={{ color: '#28a745' }}>-</span>
+                            )}
+                          </td>
                           <td>
                             {shift.status === 'approved' ? (
                               <button 
@@ -1847,6 +1892,101 @@ function App() {
                           <td>{shift.start_time}</td>
                           <td>{shift.end_time || '-'}</td>
                           <td><strong>{shift.work_hours ? `${shift.work_hours}시간` : '-'}</strong></td>
+                          <td>
+                            {shift.is_late === 1 && shift.late_exempt !== 1 ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                                <span style={{ color: '#dc3545', fontWeight: 'bold' }}>
+                                  ⚠️ {shift.late_minutes}분
+                                </span>
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    const note = prompt('지각 면제 사유를 입력하세요 (선택):', shift.late_note || '');
+                                    if (note !== null) {
+                                      try {
+                                        const response = await axios.put(`${API_URL}/shifts/${shift.id}/late-exempt`, {
+                                          late_exempt: true,
+                                          late_note: note
+                                        });
+                                        if (response.data.success) {
+                                          loadShifts();
+                                          setSelectedWorkDay({
+                                            ...selectedWorkDay,
+                                            shifts: selectedWorkDay.shifts.map(s => 
+                                              s.id === shift.id ? { ...s, late_exempt: 1, late_note: note } : s
+                                            )
+                                          });
+                                        }
+                                      } catch (error) {
+                                        console.error('Late exempt error:', error);
+                                      }
+                                    }
+                                  }}
+                                  className="btn-late-exempt"
+                                  style={{ 
+                                    padding: '2px 8px', 
+                                    fontSize: '11px',
+                                    background: '#ffc107',
+                                    color: '#000',
+                                    border: 'none',
+                                    borderRadius: '3px',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  면제
+                                </button>
+                              </div>
+                            ) : shift.is_late === 1 && shift.late_exempt === 1 ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                                <span style={{ color: '#6c757d', textDecoration: 'line-through' }}>
+                                  면제됨
+                                </span>
+                                {shift.late_note && (
+                                  <span style={{ fontSize: '11px', color: '#6c757d' }}>
+                                    ({shift.late_note})
+                                  </span>
+                                )}
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    if (confirm('지각 면제를 취소하시겠습니까?')) {
+                                      try {
+                                        const response = await axios.put(`${API_URL}/shifts/${shift.id}/late-exempt`, {
+                                          late_exempt: false,
+                                          late_note: null
+                                        });
+                                        if (response.data.success) {
+                                          loadShifts();
+                                          setSelectedWorkDay({
+                                            ...selectedWorkDay,
+                                            shifts: selectedWorkDay.shifts.map(s => 
+                                              s.id === shift.id ? { ...s, late_exempt: 0, late_note: null } : s
+                                            )
+                                          });
+                                        }
+                                      } catch (error) {
+                                        console.error('Late exempt cancel error:', error);
+                                      }
+                                    }
+                                  }}
+                                  className="btn-late-cancel"
+                                  style={{ 
+                                    padding: '2px 8px', 
+                                    fontSize: '11px',
+                                    background: '#dc3545',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '3px',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  취소
+                                </button>
+                              </div>
+                            ) : (
+                              <span style={{ color: '#28a745' }}>-</span>
+                            )}
+                          </td>
                           <td>
                             {shift.status === 'approved' ? (
                               <button 
@@ -1989,8 +2129,8 @@ function App() {
                     
                     // Create stats map for quick lookup
                     const statsMap = {};
-                    if (adminCleaningStats && adminCleaningStats.dailyStats && Array.isArray(adminCleaningStats.dailyStats)) {
-                      adminCleaningStats.dailyStats.forEach(stat => {
+                    if (adminCleaningStats && adminCleaningStats.stats && Array.isArray(adminCleaningStats.stats)) {
+                      adminCleaningStats.stats.forEach(stat => {
                         statsMap[stat.date] = stat;
                       });
                     }
@@ -2162,15 +2302,19 @@ function App() {
                         onUpdate={async () => {
                           // Reload cleaning stats when tasks are updated
                           try {
-                            const response = await axios.get(`${API_URL}/admin/cleaning-stats`, {
+                            const response = await axios.get(`${API_URL}/admin-cleaning-stats`, {
                               params: { month: selectedMonth }
                             });
                             if (response.data.success) {
                               // Update global stats
-                              setAdminCleaningStats(response.data.stats);
+                              setAdminCleaningStats({
+                                stats: response.data.stats,
+                                monthlyCompletionRate: response.data.monthlyCompletionRate || 0,
+                                consecutiveDays: response.data.consecutiveDays || 0
+                              });
                               
                               // Update modal data immediately
-                              const updatedDayStat = response.data.stats.dailyStats.find(s => s.date === selectedDayDetail.date);
+                              const updatedDayStat = response.data.stats.find(s => s.date === selectedDayDetail.date);
                               if (updatedDayStat) {
                                 setSelectedDayDetail({
                                   date: selectedDayDetail.date,
@@ -2292,17 +2436,25 @@ function App() {
                   <th>전화번호</th>
                   <th>입사일</th>
                   <th>시급</th>
+                  <th style={{ width: '100px', textAlign: 'right' }}>보건증 만료</th>
                 </tr>
               </thead>
               <tbody>
                 {employees.filter(e => e.role !== 'cleaning' && (workplaceFilter === 'all' || e.workplace === workplaceFilter)).length === 0 ? (
                   <tr>
-                    <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                    <td colSpan="8" style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
                       직원 데이터가 없습니다
                     </td>
                   </tr>
                 ) : (
-                  employees.filter(e => e.role !== 'cleaning' && (workplaceFilter === 'all' || e.workplace === workplaceFilter)).map(emp => (
+                  employees.filter(e => e.role !== 'cleaning' && (workplaceFilter === 'all' || e.workplace === workplaceFilter)).map(emp => {
+                    // Check if health certificate expires within 90 days
+                    const daysUntilExpiry = emp.health_certificate_expiry ? 
+                      Math.floor((new Date(emp.health_certificate_expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+                    const isExpiringSoon = daysUntilExpiry !== null && daysUntilExpiry <= 90;
+                    const isExpired = daysUntilExpiry !== null && daysUntilExpiry < 0;
+                    
+                    return (
                     <tr 
                       key={emp.id}
                       onClick={() => {
@@ -2325,8 +2477,36 @@ function App() {
                       <td>{emp.phone || '-'}</td>
                       <td>{emp.hire_date || '-'}</td>
                       <td>{emp.hourly_wage ? `${emp.hourly_wage.toLocaleString()}원` : '-'}</td>
+                      <td style={{ textAlign: 'right', paddingRight: '12px' }}>
+                        {isExpired ? (
+                          <span style={{ 
+                            color: '#dc3545', 
+                            fontWeight: 'bold',
+                            fontSize: '12px',
+                            background: '#ffe6e6',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            display: 'inline-block'
+                          }}>
+                            ⚠️ 만료
+                          </span>
+                        ) : isExpiringSoon ? (
+                          <span style={{ 
+                            color: '#ff9800', 
+                            fontWeight: 'bold',
+                            fontSize: '12px',
+                            background: '#fff3e0',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            display: 'inline-block'
+                          }}>
+                            ⚠️ {daysUntilExpiry}일
+                          </span>
+                        ) : null}
+                      </td>
                     </tr>
-                  ))
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -2391,20 +2571,45 @@ function App() {
                           <div className="detail-item">
                             <span className="detail-label">직급</span>
                             <select
-                              value={editForm.position}
-                              onChange={(e) => setEditForm({...editForm, position: e.target.value})}
+                              value={isCustomPosition ? 'custom' : editForm.position}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === 'custom') {
+                                  setIsCustomPosition(true);
+                                  setEditForm({...editForm, position: ''});
+                                } else {
+                                  setIsCustomPosition(false);
+                                  setEditForm({...editForm, position: value});
+                                }
+                              }}
                               style={{ 
                                 width: '100%', 
                                 padding: '8px 12px', 
                                 borderRadius: '5px', 
                                 border: '1px solid #ddd',
-                                fontSize: '14px'
+                                fontSize: '14px',
+                                marginBottom: isCustomPosition ? '8px' : '0'
                               }}
                             >
-                              <option value="PT">알바생 (PT)</option>
-                              <option value="정직원">정직원</option>
-                              <option value="매니저">매니저</option>
+                              <option value="PT">PT</option>
+                              <option value="사원">사원</option>
+                              <option value="custom">수기 입력</option>
                             </select>
+                            {isCustomPosition && (
+                              <input
+                                type="text"
+                                value={editForm.position}
+                                onChange={(e) => setEditForm({...editForm, position: e.target.value})}
+                                placeholder="직급을 입력하세요 (예: 인턴, 대리, 과장)"
+                                style={{ 
+                                  width: '100%', 
+                                  padding: '8px 12px', 
+                                  borderRadius: '5px', 
+                                  border: '1px solid #ddd',
+                                  fontSize: '14px'
+                                }}
+                              />
+                            )}
                           </div>
                           <div className="detail-item">
                             <span className="detail-label">근무지</span>
@@ -2500,6 +2705,36 @@ function App() {
                               }}
                             />
                           </div>
+                          <div className="detail-item">
+                            <span className="detail-label">⏰ 정규 출근 시간</span>
+                            <input
+                              type="time"
+                              value={editForm.regular_start_time}
+                              onChange={(e) => setEditForm({...editForm, regular_start_time: e.target.value})}
+                              style={{ 
+                                width: '100%', 
+                                padding: '8px 12px', 
+                                borderRadius: '5px', 
+                                border: '1px solid #ddd',
+                                fontSize: '14px'
+                              }}
+                            />
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">🏥 보건증 만료일</span>
+                            <input
+                              type="date"
+                              value={editForm.health_certificate_expiry}
+                              onChange={(e) => setEditForm({...editForm, health_certificate_expiry: e.target.value})}
+                              style={{ 
+                                width: '100%', 
+                                padding: '8px 12px', 
+                                borderRadius: '5px', 
+                                border: '1px solid #ddd',
+                                fontSize: '14px'
+                              }}
+                            />
+                          </div>
                         </div>
                       </div>
 
@@ -2577,6 +2812,14 @@ function App() {
                             <span className="detail-value">
                               {selectedEmployee.hourly_wage ? `${selectedEmployee.hourly_wage.toLocaleString()}원` : '미등록'}
                             </span>
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">⏰ 정규 출근 시간</span>
+                            <span className="detail-value">{selectedEmployee.regular_start_time || '미설정'}</span>
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">🏥 보건증 만료일</span>
+                            <span className="detail-value">{selectedEmployee.health_certificate_expiry || '미등록'}</span>
                           </div>
                         </div>
                       </div>
