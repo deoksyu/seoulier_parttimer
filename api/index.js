@@ -634,36 +634,40 @@ app.post('/api/cleaning-check', async (req, res) => {
   try {
     const { taskId, date, userId } = req.body;
     
+    // Get KST time
+    const now = new Date();
+    const kstTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)).toISOString();
+    
     const checkResult = await query(
       'SELECT * FROM daily_cleanings WHERE task_id = $1 AND date = $2',
       [taskId, date]
     );
     
     if (checkResult.rows.length === 0) {
-      // First check
+      // First check (level 1 - green check)
       await query(
         'INSERT INTO daily_cleanings (task_id, date, checked_by, checked_at, check_level) VALUES ($1, $2, $3, $4, 1)',
-        [taskId, date, userId, new Date().toISOString()]
+        [taskId, date, userId, kstTime]
       );
-      res.json({ success: true, checked: true, check_level: 1 });
+      res.json({ success: true, checked: true, level: 1 });
     } else {
       const existingCheck = checkResult.rows[0];
       const currentLevel = existingCheck.check_level || 1;
       
       if (currentLevel === 1) {
-        // Second check
+        // Second check (level 2 - red check)
         await query(
           'UPDATE daily_cleanings SET check_level = 2, checked_by = $1, checked_at = $2 WHERE task_id = $3 AND date = $4',
-          [userId, new Date().toISOString(), taskId, date]
+          [userId, kstTime, taskId, date]
         );
-        res.json({ success: true, checked: true, check_level: 2 });
+        res.json({ success: true, checked: true, level: 2 });
       } else {
-        // Uncheck
+        // Uncheck (remove)
         await query(
           'DELETE FROM daily_cleanings WHERE task_id = $1 AND date = $2',
           [taskId, date]
         );
-        res.json({ success: true, checked: false, check_level: 0 });
+        res.json({ success: true, checked: false, level: 0 });
       }
     }
   } catch (error) {
