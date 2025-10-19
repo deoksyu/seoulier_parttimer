@@ -148,10 +148,10 @@ app.post('/api/login-pin', async (req, res) => {
       return res.status(400).json({ success: false, message: 'PIN 번호 4자리를 입력해주세요' });
     }
     
-    const result = await query('SELECT * FROM users WHERE pin = $1', [pin]);
+    const result = await query('SELECT * FROM users WHERE pin = $1 AND (is_active = 1 OR is_active IS NULL)', [pin]);
     
     if (result.rows.length === 0) {
-      return res.status(401).json({ success: false, message: 'PIN 번호가 잘못되었습니다' });
+      return res.status(401).json({ success: false, message: 'PIN 번호가 잘못되었거나 비활성화된 계정입니다' });
     }
     
     const user = result.rows[0];
@@ -515,13 +515,94 @@ app.get('/api/statistics', async (req, res) => {
 app.get('/api/employees', async (req, res) => {
   try {
     const result = await query(
-      'SELECT id, username, name, role, pin, phone, email, hire_date, hourly_wage, memo, position, workplace, regular_start_time, health_certificate_expiry FROM users WHERE role != $1 ORDER BY name',
+      'SELECT id, username, name, role, pin, phone, email, hire_date, hourly_wage, memo, position, workplace, regular_start_time, health_certificate_expiry FROM users WHERE role != $1 AND (is_active = 1 OR is_active IS NULL) ORDER BY name',
       ['admin']
     );
     
     res.json({ success: true, employees: result.rows });
   } catch (error) {
     console.error('Get employees error:', error);
+    res.status(500).json({ success: false, message: 'Database error' });
+  }
+});
+
+// Add new employee
+app.post('/api/employees', async (req, res) => {
+  try {
+    const { 
+      username, password, name, pin,
+      phone, email, position, workplace,
+      hire_date, hourly_wage, 
+      regular_start_time, health_certificate_expiry,
+      memo 
+    } = req.body;
+    
+    // Validation
+    if (!username || !password || !name || !pin) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '필수 항목을 입력해주세요 (이름, 아이디, 비밀번호, PIN)' 
+      });
+    }
+    
+    // PIN validation (4 digits)
+    if (!/^\d{4}$/.test(pin)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'PIN은 4자리 숫자여야 합니다' 
+      });
+    }
+    
+    // Check duplicate username
+    const usernameCheck = await query(
+      'SELECT id FROM users WHERE username = $1',
+      [username]
+    );
+    if (usernameCheck.rows.length > 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '이미 사용 중인 아이디입니다' 
+      });
+    }
+    
+    // Check duplicate PIN
+    const pinCheck = await query(
+      'SELECT id FROM users WHERE pin = $1',
+      [pin]
+    );
+    if (pinCheck.rows.length > 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '이미 사용 중인 PIN입니다' 
+      });
+    }
+    
+    // Insert new employee
+    const result = await query(
+      `INSERT INTO users (
+        username, password, name, role, pin,
+        phone, email, position, workplace,
+        hire_date, hourly_wage, 
+        regular_start_time, health_certificate_expiry,
+        memo, is_active
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 1)
+      RETURNING id`,
+      [
+        username, password, name, 'staff', pin,
+        phone || null, email || null, position || '직원', workplace || '서울역 홀',
+        hire_date || null, hourly_wage || 10000,
+        regular_start_time || null, health_certificate_expiry || null,
+        memo || null
+      ]
+    );
+    
+    res.json({ 
+      success: true, 
+      message: '직원이 추가되었습니다',
+      employeeId: result.rows[0].id
+    });
+  } catch (error) {
+    console.error('Add employee error:', error);
     res.status(500).json({ success: false, message: 'Database error' });
   }
 });
@@ -564,6 +645,50 @@ app.put('/api/employees/:id', async (req, res) => {
     res.json({ success: true, message: '수정되었습니다' });
   } catch (error) {
     console.error('Update employee error:', error);
+    res.status(500).json({ success: false, message: 'Database error' });
+  }
+});
+
+// Delete employee (Soft Delete)
+app.delete('/api/employees/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Check if employee exists
+    const checkResult = await query(
+      'SELECT id, name, role FROM users WHERE id = $1',
+      [id]
+    );
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: '직원을 찾을 수 없습니다' 
+      });
+    }
+    
+    const employee = checkResult.rows[0];
+    
+    // Prevent deleting admin
+    if (employee.role === 'admin') {
+      return res.status(400).json({ 
+        success: false, 
+        message: '관리자 계정은 삭제할 수 없습니다' 
+      });
+    }
+    
+    // Soft delete: set is_active to 0
+    await query(
+      'UPDATE users SET is_active = 0 WHERE id = $1',
+      [id]
+    );
+    
+    res.json({ 
+      success: true, 
+      message: `${employee.name} 직원이 삭제되었습니다` 
+    });
+  } catch (error) {
+    console.error('Delete employee error:', error);
     res.status(500).json({ success: false, message: 'Database error' });
   }
 });
