@@ -149,6 +149,7 @@ function App() {
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
   const [workplaceFilter, setWorkplaceFilter] = useState('all'); // 근무지 필터
+  const [employeeSortBy, setEmployeeSortBy] = useState('id_asc'); // 직원 정렬
   const [adminWeeklyTasks, setAdminWeeklyTasks] = useState([]);
   const [adminMonthlyTasks, setAdminMonthlyTasks] = useState([]);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -592,6 +593,51 @@ function App() {
     return shifts
       .filter(shift => shift.work_hours)
       .reduce((total, shift) => total + shift.work_hours, 0);
+  };
+
+  // Sort employees function
+  const sortEmployees = (employees, sortType) => {
+    const sorted = [...employees];
+    
+    switch(sortType) {
+      case 'name_asc':
+        return sorted.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+      
+      case 'name_desc':
+        return sorted.sort((a, b) => b.name.localeCompare(a.name, 'ko'));
+      
+      case 'pin_asc':
+        return sorted.sort((a, b) => {
+          const pinA = a.pin || '9999';
+          const pinB = b.pin || '9999';
+          return pinA.localeCompare(pinB);
+        });
+      
+      case 'pin_desc':
+        return sorted.sort((a, b) => {
+          const pinA = a.pin || '0000';
+          const pinB = b.pin || '0000';
+          return pinB.localeCompare(pinA);
+        });
+      
+      case 'hire_date_asc':
+        return sorted.sort((a, b) => {
+          const dateA = a.hire_date || '9999-12-31';
+          const dateB = b.hire_date || '9999-12-31';
+          return dateA.localeCompare(dateB);
+        });
+      
+      case 'hire_date_desc':
+        return sorted.sort((a, b) => {
+          const dateA = a.hire_date || '0000-01-01';
+          const dateB = b.hire_date || '0000-01-01';
+          return dateB.localeCompare(dateA);
+        });
+      
+      case 'id_asc':
+      default:
+        return sorted.sort((a, b) => a.id - b.id);
+    }
   };
 
   // Calculate consecutive on-time days
@@ -2440,21 +2486,42 @@ function App() {
           <div className="shifts-section">
             <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2>👥 직원 관리</h2>
-              <button
-                onClick={() => setShowAddEmployeeModal(true)}
-                style={{
-                  padding: '10px 20px',
-                  backgroundColor: '#007bff',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '5px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: 'bold'
-                }}
-              >
-                + 직원 추가
-              </button>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <select 
+                  value={employeeSortBy} 
+                  onChange={(e) => setEmployeeSortBy(e.target.value)}
+                  style={{ 
+                    padding: '8px 12px', 
+                    borderRadius: '5px', 
+                    border: '1px solid #ddd',
+                    fontSize: '14px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="id_asc">등록순 (기본)</option>
+                  <option value="name_asc">이름순 (가나다)</option>
+                  <option value="name_desc">이름순 (역순)</option>
+                  <option value="pin_asc">PIN 번호순 ▲</option>
+                  <option value="pin_desc">PIN 번호순 ▼</option>
+                  <option value="hire_date_asc">입사일순 (오래된순)</option>
+                  <option value="hire_date_desc">입사일순 (최근순)</option>
+                </select>
+                <button
+                  onClick={() => setShowAddEmployeeModal(true)}
+                  style={{
+                    padding: '10px 20px',
+                    backgroundColor: '#007bff',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  + 직원 추가
+                </button>
+              </div>
             </div>
             
             {/* 근무지 필터 */}
@@ -2513,7 +2580,10 @@ function App() {
                     </td>
                   </tr>
                 ) : (
-                  employees.filter(e => e.role !== 'cleaning' && (workplaceFilter === 'all' || e.workplace === workplaceFilter)).map(emp => {
+                  sortEmployees(
+                    employees.filter(e => e.role !== 'cleaning' && (workplaceFilter === 'all' || e.workplace === workplaceFilter)),
+                    employeeSortBy
+                  ).map(emp => {
                     // Check if health certificate expires within 90 days
                     const daysUntilExpiry = emp.health_certificate_expiry ? 
                       Math.floor((new Date(emp.health_certificate_expiry) - new Date()) / (1000 * 60 * 60 * 24)) : null;
