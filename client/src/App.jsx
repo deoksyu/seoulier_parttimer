@@ -1394,7 +1394,6 @@ function App() {
           <div className="attendance-streak">
             <span className="streak-icon">🔥</span>
             <span className="streak-text">연속 완벽 출근: <strong>{calculateConsecutiveOnTimeDays()}일</strong></span>
-            <span className="streak-info">(11시 이전 출근)</span>
           </div>
           <div className="button-group">
             <button 
