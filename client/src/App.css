@@ -612,13 +612,13 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   border-left: 3px solid #f44336;
 }
 
-/* Hide any text nodes in late column that are not badges */
-table td:nth-child(5) {
+/* Hide any text nodes in late column that are not badges (직원 페이지만) */
+.container:not(:has(.admin-tabs)) table td:nth-child(5) {
   font-size: 0;
 }
 
-table td:nth-child(5) .late-badge,
-table td:nth-child(5) .exempt-badge {
+.container:not(:has(.admin-tabs)) table td:nth-child(5) .late-badge,
+.container:not(:has(.admin-tabs)) table td:nth-child(5) .exempt-badge {
   font-size: 12px;
 }
 
