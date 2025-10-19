@@ -2453,7 +2453,6 @@ function App() {
                   <th>입사일</th>
                   <th>시급</th>
                   <th style={{ width: '100px', textAlign: 'right' }}>보건증 만료</th>
-                  <th style={{ width: '80px', textAlign: 'center' }}>삭제</th>
                 </tr>
               </thead>
               <tbody>
@@ -2520,34 +2519,6 @@ function App() {
                             ⚠️ {daysUntilExpiry}일
                           </span>
                         ) : null}
-                      </td>
-                      <td style={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-                        <button
-                          onClick={async () => {
-                            if (confirm(`'${emp.name}' 직원을 삭제하시겠습니까?\n\n⚠️ 주의: 삭제된 직원의 근무 기록은 유지되지만, 더 이상 로그인할 수 없습니다.`)) {
-                              try {
-                                const response = await axios.delete(`${API_URL}/employees/${emp.id}`);
-                                if (response.data.success) {
-                                  alert(response.data.message);
-                                  loadEmployees(); // 직원 목록 새로고침
-                                }
-                              } catch (error) {
-                                alert(error.response?.data?.message || '직원 삭제에 실패했습니다');
-                              }
-                            }
-                          }}
-                          style={{
-                            padding: '6px 12px',
-                            backgroundColor: '#dc3545',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px'
-                          }}
-                        >
-                          삭제
-                        </button>
                       </td>
                     </tr>
                     );
@@ -2885,6 +2856,26 @@ function App() {
                           style={{ padding: '10px 24px', fontSize: '16px' }}
                         >
                           ✏️ 수정
+                        </button>
+                        <button 
+                          onClick={async () => {
+                            if (confirm(`'${selectedEmployee.name}' 직원을 삭제하시겠습니까?\n\n⚠️ 주의: 삭제된 직원의 근무 기록은 유지되지만, 더 이상 로그인할 수 없습니다.`)) {
+                              try {
+                                const response = await axios.delete(`${API_URL}/employees/${selectedEmployee.id}`);
+                                if (response.data.success) {
+                                  alert(response.data.message);
+                                  setShowEmployeeModal(false);
+                                  loadEmployees(); // 직원 목록 새로고침
+                                }
+                              } catch (error) {
+                                alert(error.response?.data?.message || '직원 삭제에 실패했습니다');
+                              }
+                            }
+                          }}
+                          className="btn-delete"
+                          style={{ padding: '10px 24px', fontSize: '16px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+                        >
+                          🗑️ 삭제
                         </button>
                       </div>
                     </div>
