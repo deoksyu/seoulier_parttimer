@@ -683,9 +683,9 @@ app.delete('/api/employees/:id', async (req, res) => {
       });
     }
     
-    // Soft delete: set is_active to 0
+    // Soft delete: set is_active to 0 and clear PIN for reuse
     await query(
-      'UPDATE users SET is_active = 0 WHERE id = $1',
+      'UPDATE users SET is_active = 0, pin = NULL WHERE id = $1',
       [id]
     );
     
