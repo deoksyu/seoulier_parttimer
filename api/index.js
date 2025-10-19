@@ -223,7 +223,12 @@ app.post('/api/clock-in', async (req, res) => {
       
       console.log('Regular minutes:', regularMinutes, 'Actual minutes:', actualMinutes);
       
-      if (actualMinutes > regularMinutes) {
+      // 저녁 근무 시간대 (16:00~17:00) 체크
+      if (actualHour === 16) {
+        console.log('Evening shift (16:00~17:00) - No late check');
+        isLate = 0;
+        lateMinutes = 0;
+      } else if (actualMinutes > regularMinutes) {
         isLate = 1;
         lateMinutes = actualMinutes - regularMinutes;
         console.log('LATE! Minutes late:', lateMinutes);
