@@ -1476,13 +1476,14 @@ function App() {
                 <th>출근 시간</th>
                 <th>퇴근 시간</th>
                 <th>근무 시간</th>
+                <th>지각</th>
                 <th>상태</th>
               </tr>
             </thead>
             <tbody>
               {shifts.length === 0 ? (
                 <tr>
-                  <td colSpan="5">근무 내역이 없습니다</td>
+                  <td colSpan="6">근무 내역이 없습니다</td>
                 </tr>
               ) : (
                 shifts.map(shift => (
@@ -1494,25 +1495,21 @@ function App() {
                       {shift.date}
                       {shift.is_modified && <span className="modified-badge">✏️ 수정됨</span>}
                     </td>
-                    <td>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
-                        <span>{shift.start_time}</span>
-                        <div style={{ minWidth: '100px', textAlign: 'right' }}>
-                          {shift.is_late && !shift.late_exempt && shift.late_minutes > 0 && (
-                            <span className="late-badge">
-                              ⚠️ {shift.late_minutes}분 지각
-                            </span>
-                          )}
-                          {shift.late_exempt && shift.is_late && (
-                            <span className="exempt-badge">
-                              ✓ 지각 면제
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </td>
+                    <td>{shift.start_time}</td>
                     <td>{shift.end_time || '-'}</td>
                     <td>{shift.work_hours ? `${shift.work_hours}시간` : '-'}</td>
+                    <td>
+                      {shift.is_late && !shift.late_exempt && shift.late_minutes > 0 && (
+                        <span className="late-badge">
+                          ⚠️ {shift.late_minutes}분 지각
+                        </span>
+                      )}
+                      {shift.late_exempt && shift.is_late && (
+                        <span className="exempt-badge">
+                          ✓ 지각 면제
+                        </span>
+                      )}
+                    </td>
                     <td>
                       <span className={`status ${shift.status}`}>
                         {shift.status === 'approved' ? '✅ 승인' : '⏳ 대기'}
@@ -1526,6 +1523,7 @@ function App() {
               <tr className="total-row">
                 <td colSpan="3"><strong>월 합계</strong></td>
                 <td><strong>{calculateTotalHours()}시간</strong></td>
+                <td></td>
                 <td></td>
               </tr>
             </tfoot>
