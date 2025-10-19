@@ -446,9 +446,15 @@ app.put('/api/shifts/:id', async (req, res) => {
       }
     }
     
+    // Auto-calculate work_hours if both start_time and end_time are provided
+    let calculatedWorkHours = work_hours;
+    if (start_time && end_time) {
+      calculatedWorkHours = calculateWorkHours(start_time, end_time);
+    }
+    
     await query(
       'UPDATE shifts SET start_time = $1, end_time = $2, work_hours = $3, is_modified = 1, is_late = $4, late_minutes = $5, late_exempt = $6, late_note = $7 WHERE id = $8',
-      [start_time, end_time, work_hours, isLate, lateMinutes, late_exempt || 0, late_note || null, id]
+      [start_time, end_time, calculatedWorkHours, isLate, lateMinutes, late_exempt || 0, late_note || null, id]
     );
     
     res.json({
