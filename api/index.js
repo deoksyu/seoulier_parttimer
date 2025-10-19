@@ -540,7 +540,7 @@ app.get('/api/statistics', async (req, res) => {
         ) as approved_hours
       FROM users u
       LEFT JOIN shifts s ON u.id = s.user_id
-      WHERE u.role = 'staff' AND (u.is_active = 1 OR u.is_active IS NULL)
+      WHERE u.role != 'admin' AND u.role != 'cleaning' AND (u.is_active = 1 OR u.is_active IS NULL)
     `;
     
     const params = [];
