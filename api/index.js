@@ -195,19 +195,60 @@ app.post('/api/clock-in', async (req, res) => {
       return res.status(400).json({ success: false, message: '이미 출근 처리되었습니다' });
     }
     
+    // Get user's regular start time for late check
+    const userResult = await query(
+      'SELECT regular_start_time FROM users WHERE id = $1',
+      [userId]
+    );
+    const user = userResult.rows[0];
+    
+    let isLate = 0;
+    let lateMinutes = 0;
+    
+    // Check if late
+    if (user && user.regular_start_time) {
+      console.log('Regular start time:', user.regular_start_time);
+      console.log('Actual clock-in time:', time);
+      
+      const regularParts = user.regular_start_time.split(':');
+      const actualParts = time.split(':');
+      
+      const regularHour = parseInt(regularParts[0]);
+      const regularMin = parseInt(regularParts[1]);
+      const actualHour = parseInt(actualParts[0]);
+      const actualMin = parseInt(actualParts[1]);
+      
+      const regularMinutes = regularHour * 60 + regularMin;
+      const actualMinutes = actualHour * 60 + actualMin;
+      
+      console.log('Regular minutes:', regularMinutes, 'Actual minutes:', actualMinutes);
+      
+      if (actualMinutes > regularMinutes) {
+        isLate = 1;
+        lateMinutes = actualMinutes - regularMinutes;
+        console.log('LATE! Minutes late:', lateMinutes);
+      } else {
+        console.log('On time or early');
+      }
+    } else {
+      console.log('No regular start time set for user');
+    }
+    
     const result = await query(
-      'INSERT INTO shifts (user_id, date, start_time) VALUES ($1, $2, $3) RETURNING id',
-      [userId, date, time]
+      'INSERT INTO shifts (user_id, date, start_time, is_late, late_minutes) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+      [userId, date, time, isLate, lateMinutes]
     );
     
-    console.log(`Clock in success - shiftId: ${result.rows[0].id}, userId: ${userId}`);
+    console.log(`Clock in success - shiftId: ${result.rows[0].id}, userId: ${userId}, isLate: ${isLate}, lateMinutes: ${lateMinutes}`);
     
     res.json({
       success: true,
       shift: {
         id: result.rows[0].id,
         date,
-        start_time: time
+        start_time: time,
+        is_late: isLate,
+        late_minutes: lateMinutes
       }
     });
   } catch (error) {
