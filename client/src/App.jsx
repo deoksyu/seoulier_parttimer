@@ -3012,7 +3012,7 @@ function App() {
                   </div>
                   <div>
                     <label style={{ fontWeight: 'bold', marginBottom: '5px', display: 'block' }}>시급 (원)</label>
-                    <input type="number" name="hourly_wage" defaultValue="10000" style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }} />
+                    <input type="text" name="hourly_wage" defaultValue="0" style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }} />
                   </div>
                   <div>
                     <label style={{ fontWeight: 'bold', marginBottom: '5px', display: 'block' }}>정규 출근 시간</label>
