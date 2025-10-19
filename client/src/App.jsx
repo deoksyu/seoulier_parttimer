@@ -2758,8 +2758,8 @@ function App() {
                           <div className="detail-item">
                             <span className="detail-label">💰 시급 (원)</span>
                             <input
-                              type="number"
-                              value={editForm.hourly_wage}
+                              type="text"
+                              value={editForm.hourly_wage || '0'}
                               onChange={(e) => setEditForm({...editForm, hourly_wage: e.target.value})}
                               placeholder="10000"
                               style={{ 
