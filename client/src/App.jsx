@@ -1572,8 +1572,8 @@ function App() {
           <tfoot>
             <tr className="total-row">
               <td colSpan="2"><strong>전체 합계</strong></td>
-              <td><strong>{statistics.reduce((sum, stat) => sum + (stat.total_hours || 0), 0)}시간</strong></td>
-              <td><strong>{statistics.reduce((sum, stat) => sum + (stat.approved_hours || 0), 0)}시간</strong></td>
+              <td><strong>{statistics.reduce((sum, stat) => sum + (Number(stat.total_hours) || 0), 0).toFixed(1)}시간</strong></td>
+              <td><strong>{statistics.reduce((sum, stat) => sum + (Number(stat.approved_hours) || 0), 0).toFixed(1)}시간</strong></td>
             </tr>
           </tfoot>
         </table>
