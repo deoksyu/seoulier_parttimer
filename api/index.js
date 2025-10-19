@@ -512,28 +512,32 @@ app.get('/api/statistics', async (req, res) => {
         COUNT(DISTINCT s.date) as shift_count,
         COALESCE(
           ROUND(
-            SUM(
-              CASE 
-                WHEN s.end_time IS NOT NULL AND s.start_time IS NOT NULL THEN 
-                  EXTRACT(EPOCH FROM (s.end_time::time - s.start_time::time)) / 3600.0
-                WHEN s.work_hours IS NOT NULL THEN s.work_hours
-                ELSE 0 
-              END
-            )::numeric, 
+            CAST(
+              SUM(
+                CASE 
+                  WHEN s.end_time IS NOT NULL AND s.start_time IS NOT NULL THEN 
+                    EXTRACT(EPOCH FROM (s.end_time::time - s.start_time::time)) / 3600.0
+                  WHEN s.work_hours IS NOT NULL THEN s.work_hours::numeric
+                  ELSE 0 
+                END
+              ) AS numeric
+            ), 
             1
           ), 
           0
         ) as total_hours,
         COALESCE(
           ROUND(
-            SUM(
-              CASE 
-                WHEN s.status = 'approved' AND s.end_time IS NOT NULL AND s.start_time IS NOT NULL THEN 
-                  EXTRACT(EPOCH FROM (s.end_time::time - s.start_time::time)) / 3600.0
-                WHEN s.status = 'approved' AND s.work_hours IS NOT NULL THEN s.work_hours
-                ELSE 0 
-              END
-            )::numeric, 
+            CAST(
+              SUM(
+                CASE 
+                  WHEN s.status = 'approved' AND s.end_time IS NOT NULL AND s.start_time IS NOT NULL THEN 
+                    EXTRACT(EPOCH FROM (s.end_time::time - s.start_time::time)) / 3600.0
+                  WHEN s.status = 'approved' AND s.work_hours IS NOT NULL THEN s.work_hours::numeric
+                  ELSE 0 
+                END
+              ) AS numeric
+            ), 
             1
           ), 
           0
