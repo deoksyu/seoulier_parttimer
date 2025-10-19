@@ -717,7 +717,7 @@ app.get('/api/cleaning-stats', async (req, res) => {
 });
 
 // Get admin cleaning stats
-app.get('/api/admin/cleaning-stats', async (req, res) => {
+app.get('/api/admin-cleaning-stats', async (req, res) => {
   try {
     const { month } = req.query;
     
@@ -784,7 +784,7 @@ app.get('/api/admin/cleaning-stats', async (req, res) => {
 });
 
 // Get admin cleaning detail for a specific date
-app.get('/api/admin/cleaning-detail/:date', async (req, res) => {
+app.get('/api/admin-cleaning-detail/:date', async (req, res) => {
   try {
     const { date } = req.params;
     
