@@ -825,6 +825,7 @@ app.get('/api/admin-cleaning-detail/:date', async (req, res) => {
           id: task.id,
           title: task.title,
           category: task.category,
+          is_checked: check ? 1 : 0,
           check_id: check ? check.id : null,
           check_level: check ? (check.check_level || 1) : 0,
           checked_by: check ? check.checked_by : null,
