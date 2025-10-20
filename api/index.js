@@ -398,6 +398,23 @@ app.put('/api/shifts/:id/approve', async (req, res) => {
   }
 });
 
+// Unapprove shift (승인 취소)
+app.put('/api/shifts/:id/unapprove', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    await query('UPDATE shifts SET status = $1 WHERE id = $2', ['pending', id]);
+    
+    res.json({
+      success: true,
+      message: '승인이 취소되었습니다'
+    });
+  } catch (error) {
+    console.error('Unapprove error:', error);
+    res.status(500).json({ success: false, message: 'Database error' });
+  }
+});
+
 // Update shift
 app.put('/api/shifts/:id', async (req, res) => {
   try {
