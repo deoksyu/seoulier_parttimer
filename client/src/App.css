@@ -622,6 +622,16 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   font-size: 12px;
 }
 
+/* Hide unwanted text nodes in modal name column (관리자 모달) */
+.work-detail-table tbody td:first-child {
+  font-size: 0;
+}
+
+.work-detail-table tbody td:first-child strong,
+.work-detail-table tbody td:first-child .modified-badge {
+  font-size: 14px;
+}
+
 .late-badge {
   display: inline-block;
   padding: 4px 10px;
