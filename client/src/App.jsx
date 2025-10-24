@@ -1985,7 +1985,10 @@ function App() {
                         </tr>
                       ) : (
                         <tr key={shift.id}>
-                          <td><strong>{shift.name}</strong></td>
+                          <td>
+                            <strong>{shift.name}</strong>
+                            {shift.is_modified && <span className="modified-badge" style={{ marginLeft: '8px' }}>✏️ 수정됨</span>}
+                          </td>
                           <td>{shift.start_time}</td>
                           <td>{shift.end_time || '-'}</td>
                           <td><strong>{shift.work_hours ? `${shift.work_hours}시간` : '-'}</strong></td>
