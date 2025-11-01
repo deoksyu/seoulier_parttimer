@@ -1502,6 +1502,7 @@ function App() {
                 onChange={(e) => setSelectedMonth(e.target.value)}
                 className="month-selector"
               >
+                <option value="2025-11">2025년 11월</option>
                 <option value="2025-10">2025년 10월</option>
                 <option value="2025-09">2025년 9월</option>
                 <option value="2025-08">2025년 8월</option>
@@ -1623,6 +1624,7 @@ function App() {
               onChange={(e) => setSelectedMonth(e.target.value)}
               className="month-selector"
             >
+              <option value="2025-11">2025년 11월</option>
               <option value="2025-10">2025년 10월</option>
               <option value="2025-09">2025년 9월</option>
               <option value="2025-08">2025년 8월</option>
@@ -1701,6 +1703,7 @@ function App() {
               onChange={(e) => setSelectedMonth(e.target.value)}
               className="month-selector"
             >
+              <option value="2025-11">2025년 11월</option>
               <option value="2025-10">2025년 10월</option>
               <option value="2025-09">2025년 9월</option>
               <option value="2025-08">2025년 8월</option>
@@ -2194,6 +2197,7 @@ function App() {
                     }}
                     className="month-selector"
                   >
+                    <option value="2025-11">2025년 11월</option>
                     <option value="2025-10">2025년 10월</option>
                     <option value="2025-09">2025년 9월</option>
                     <option value="2025-08">2025년 8월</option>
