@@ -130,6 +130,22 @@ function App() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
   const [selectedStaff, setSelectedStaff] = useState('all');
+
+  // Generate month options dynamically (current month + past 11 months)
+  const generateMonthOptions = () => {
+    const options = [];
+    const now = new Date();
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      options.push({
+        value: `${year}-${month}`,
+        label: `${year}년 ${parseInt(month)}월`
+      });
+    }
+    return options;
+  };
   const [printMode, setPrintMode] = useState(null); // 'statistics' or 'records'
   const [editingShift, setEditingShift] = useState(null); // 수정 중인 근무 기록
   
@@ -1502,13 +1518,9 @@ function App() {
                 onChange={(e) => setSelectedMonth(e.target.value)}
                 className="month-selector"
               >
-                <option value="2025-11">2025년 11월</option>
-                <option value="2025-10">2025년 10월</option>
-                <option value="2025-09">2025년 9월</option>
-                <option value="2025-08">2025년 8월</option>
-                <option value="2025-07">2025년 7월</option>
-                <option value="2025-06">2025년 6월</option>
-                <option value="2025-05">2025년 5월</option>
+                {generateMonthOptions().map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
               </select>
               <button onClick={handlePrint} className="btn-print">
                 🖨️ 인쇄/PDF
@@ -1624,13 +1636,9 @@ function App() {
               onChange={(e) => setSelectedMonth(e.target.value)}
               className="month-selector"
             >
-              <option value="2025-11">2025년 11월</option>
-              <option value="2025-10">2025년 10월</option>
-              <option value="2025-09">2025년 9월</option>
-              <option value="2025-08">2025년 8월</option>
-              <option value="2025-07">2025년 7월</option>
-              <option value="2025-06">2025년 6월</option>
-              <option value="2025-05">2025년 5월</option>
+              {generateMonthOptions().map(option => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
             </select>
             <button onClick={() => handlePrint('statistics')} className="btn-print">
               🖨️ 인쇄/PDF
@@ -1703,13 +1711,9 @@ function App() {
               onChange={(e) => setSelectedMonth(e.target.value)}
               className="month-selector"
             >
-              <option value="2025-11">2025년 11월</option>
-              <option value="2025-10">2025년 10월</option>
-              <option value="2025-09">2025년 9월</option>
-              <option value="2025-08">2025년 8월</option>
-              <option value="2025-07">2025년 7월</option>
-              <option value="2025-06">2025년 6월</option>
-              <option value="2025-05">2025년 5월</option>
+              {generateMonthOptions().map(option => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
             </select>
             <button onClick={() => handlePrint('records')} className="btn-print">
               🖨️ 인쇄/PDF
@@ -2197,13 +2201,9 @@ function App() {
                     }}
                     className="month-selector"
                   >
-                    <option value="2025-11">2025년 11월</option>
-                    <option value="2025-10">2025년 10월</option>
-                    <option value="2025-09">2025년 9월</option>
-                    <option value="2025-08">2025년 8월</option>
-                    <option value="2025-07">2025년 7월</option>
-                    <option value="2025-06">2025년 6월</option>
-                    <option value="2025-05">2025년 5월</option>
+                    {generateMonthOptions().map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="cleaning-stats-grid">
