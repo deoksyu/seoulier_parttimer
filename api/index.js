@@ -88,24 +88,32 @@ function calculateWorkHours(startTime, endTime) {
       return 0;
     }
     
-    const startMinutes = startHour * 60 + startMin;
-    const endMinutes = endHour * 60 + endMin;
+    let startMinutes = startHour * 60 + startMin;
+    let endMinutes = endHour * 60 + endMin;
+    
+    // 10:00 이전 출근은 10:00으로 보정
+    const workStartThreshold = 10 * 60;  // 600분 (10:00)
+    
+    if (startMinutes < workStartThreshold) {
+      console.log(`[calculateWorkHours] Early clock-in detected: ${startTime} → adjusted to 10:00`);
+      startMinutes = workStartThreshold;
+    }
+    
+    // 퇴근도 10:00 이전이면 근무시간 0
+    if (endMinutes < workStartThreshold) {
+      console.log(`[calculateWorkHours] Clock-out before 10:00: work hours = 0`);
+      return 0;
+    }
+    
     let diffMinutes = endMinutes - startMinutes;
     
-    console.log(`[calculateWorkHours] Minutes - start: ${startMinutes}, end: ${endMinutes}, diff: ${diffMinutes}`);
-    
-    // Handle overnight shifts
-    if (diffMinutes < 0) {
-      diffMinutes += 24 * 60;
-      console.log(`[calculateWorkHours] Overnight shift detected, adjusted diff: ${diffMinutes}`);
-    }
+    console.log(`[calculateWorkHours] Adjusted - start: ${startMinutes}, end: ${endMinutes}, diff: ${diffMinutes}`);
     
     // 휴게시간 15:00~17:00 (900분~1020분) 체크
     const breakStart = 15 * 60; // 900
     const breakEnd = 17 * 60;   // 1020
     
-    // 야간 근무가 아닌 경우에만 휴게시간 체크
-    if (diffMinutes < 24 * 60 && startMinutes < breakEnd && endMinutes > breakStart) {
+    if (startMinutes < breakEnd && endMinutes > breakStart) {
       const overlapStart = Math.max(startMinutes, breakStart);
       const overlapEnd = Math.min(endMinutes, breakEnd);
       const overlapMinutes = overlapEnd - overlapStart;
@@ -466,7 +474,9 @@ app.put('/api/shifts/:id', async (req, res) => {
     // Auto-calculate work_hours if both start_time and end_time are provided
     let calculatedWorkHours = work_hours;
     if (start_time && end_time) {
+      console.log(`[Update Shift] Recalculating work hours - start: ${start_time}, end: ${end_time}`);
       calculatedWorkHours = calculateWorkHours(start_time, end_time);
+      console.log(`[Update Shift] Original work_hours: ${work_hours}, Recalculated: ${calculatedWorkHours}`);
     }
     
     await query(

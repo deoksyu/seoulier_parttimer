@@ -305,14 +305,26 @@ function calculateWorkHours(startTime, endTime) {
   const [startHour, startMin] = startTime.split(':').map(Number);
   const [endHour, endMin] = endTime.split(':').map(Number);
   
-  const startMinutes = startHour * 60 + startMin;
-  const endMinutes = endHour * 60 + endMin;
+  let startMinutes = startHour * 60 + startMin;
+  let endMinutes = endHour * 60 + endMin;
+  
+  // 10:00 이전 출근은 10:00으로 보정
+  const workStartThreshold = 10 * 60;  // 600분 (10:00)
+  
+  if (startMinutes < workStartThreshold) {
+    startMinutes = workStartThreshold;
+  }
+  
+  // 퇴근도 10:00 이전이면 근무시간 0
+  if (endMinutes < workStartThreshold) {
+    return 0;
+  }
+  
   let diffMinutes = endMinutes - startMinutes;
   
   // 휴게시간 15:00~17:00 (900분~1020분) 체크
   const breakStart = 15 * 60; // 900분 (15:00)
   const breakEnd = 17 * 60;   // 1020분 (17:00)
-  const breakDuration = 120;  // 2시간 = 120분
   
   // 근무 시간이 휴게시간과 겹치는지 확인
   if (startMinutes < breakEnd && endMinutes > breakStart) {
