@@ -679,22 +679,14 @@ function App() {
     for (const shift of sortedShifts) {
       if (!shift.start_time) continue;
       
-      // 출근 시간이 09:00~11:00 또는 15:00~17:00 사이인지 확인
-      const [hour, minute] = shift.start_time.split(':').map(Number);
-      const startMinutes = hour * 60 + minute;
-      
-      const morningStart = 9 * 60;   // 09:00 = 540분
-      const morningEnd = 11 * 60;    // 11:00 = 660분
-      const afternoonStart = 15 * 60; // 15:00 = 900분
-      const afternoonEnd = 17 * 60;   // 17:00 = 1020분
-      
-      const isOnTime = (startMinutes >= morningStart && startMinutes <= morningEnd) ||
-                       (startMinutes >= afternoonStart && startMinutes <= afternoonEnd);
+      // 지각하지 않았고, 지각 면제도 아닌 경우만 카운트
+      // is_late가 0이거나 false인 경우만 정시 출근으로 인정
+      const isOnTime = !shift.is_late || shift.is_late === 0;
       
       if (isOnTime) {
         consecutiveDays++;
       } else {
-        // 정시 출근 시간대가 아니면 연속 기록 중단
+        // 지각이면 연속 기록 중단
         break;
       }
     }
