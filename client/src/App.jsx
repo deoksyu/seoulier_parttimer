@@ -1798,6 +1798,7 @@ function App() {
                         const totalHours = dayData.shifts.reduce((sum, shift) => sum + (shift.work_hours || 0), 0);
                         const uniqueWorkers = new Set(dayData.shifts.map(s => s.name)).size;
                         const hasLateWorkers = dayData.shifts.some(shift => shift.is_late === 1 && shift.late_exempt !== 1);
+                        const hasModifiedShifts = dayData.shifts.some(shift => shift.is_modified === 1);
                         
                         return (
                           <div 
@@ -1815,6 +1816,7 @@ function App() {
                           >
                             <div className="day-number">
                               {dayData.day}
+                              {hasModifiedShifts && <span className="modified-indicator"></span>}
                               {hasLateWorkers && <span className="late-indicator"></span>}
                             </div>
                             {dayData.shifts.length > 0 && (
