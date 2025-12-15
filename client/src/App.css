@@ -522,6 +522,11 @@ tfoot .total-row {
   border-top: 2px solid #333;
 }
 
+:root.dark-mode tfoot .total-row {
+  background: #2d2d2d;
+  border-top: 2px solid #4a4a4a;
+}
+
 tfoot .total-row td {
   padding: 15px 12px;
   font-size: 16px;
@@ -720,6 +725,10 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   background: #fff3cd !important;
 }
 
+:root.dark-mode .editing-row {
+  background: #5d4037 !important;
+}
+
 /* Modified Badge */
 .modified-badge {
   display: inline-block;
@@ -732,8 +741,18 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   font-weight: bold;
 }
 
+:root.dark-mode .modified-badge {
+  background: #5d4037;
+  color: #ffcc80;
+  border: 1px solid #6d4c41;
+}
+
 .modified-row {
   background: #fff9e6;
+}
+
+:root.dark-mode .modified-row {
+  background: #3e2723;
 }
 
 /* Employee Stats Cards */
@@ -1787,6 +1806,62 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   .checklist-item {
     padding: 12px 15px;
     font-size: 14px;
+  }
+}
+
+/* ==================== SNOWFALL ANIMATION (Dark Mode Only) ==================== */
+
+:root.dark-mode body::before {
+  content: '';
+  position: fixed;
+  top: -100vh;
+  left: 0;
+  width: 100%;
+  height: 200vh;
+  background-image: 
+    radial-gradient(2px 2px at 20% 30%, white, transparent),
+    radial-gradient(2px 2px at 60% 70%, white, transparent),
+    radial-gradient(1px 1px at 50% 50%, white, transparent),
+    radial-gradient(1px 1px at 80% 10%, white, transparent),
+    radial-gradient(2px 2px at 90% 60%, white, transparent),
+    radial-gradient(1px 1px at 33% 80%, white, transparent),
+    radial-gradient(2px 2px at 70% 40%, white, transparent);
+  background-size: 200px 200px, 300px 300px, 150px 150px, 250px 250px, 180px 180px, 220px 220px, 280px 280px;
+  background-position: 0 0, 40px 60px, 130px 270px, 70px 100px, 150px 50px, 90px 150px, 200px 80px;
+  animation: snowfall 20s linear infinite;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.8;
+}
+
+:root.dark-mode body::after {
+  content: '';
+  position: fixed;
+  top: -100vh;
+  left: 0;
+  width: 100%;
+  height: 200vh;
+  background-image: 
+    radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 40% 60%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(2px 2px at 75% 35%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 65% 85%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 25% 45%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(2px 2px at 85% 15%, rgba(255,255,255,0.6), transparent);
+  background-size: 250px 250px, 200px 200px, 300px 300px, 180px 180px, 220px 220px, 270px 270px;
+  background-position: 20px 30px, 80px 90px, 160px 200px, 50px 120px, 120px 180px, 180px 40px;
+  animation: snowfall 30s linear infinite;
+  pointer-events: none;
+  z-index: 9998;
+  opacity: 0.6;
+}
+
+@keyframes snowfall {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(100vh);
   }
 }
 
