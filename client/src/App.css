@@ -18,6 +18,10 @@
   z-index: 1000;
 }
 
+:root.dark-mode .dark-mode-toggle {
+  background: linear-gradient(135deg, #c62828 0%, #2e7d32 100%);
+}
+
 .dark-mode-toggle:hover {
   transform: scale(1.1);
   box-shadow: 0 6px 16px rgba(0,0,0,0.4);
@@ -62,6 +66,15 @@
 
 .logout-btn:hover {
   background: #c82333;
+}
+
+:root.dark-mode .logout-btn {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+
+:root.dark-mode .logout-btn:hover {
+  background: #d32f2f;
 }
 
 /* Login Screen */
@@ -144,6 +157,18 @@
   cursor: not-allowed;
 }
 
+:root.dark-mode .login-box button {
+  background: var(--primary-bg);
+}
+
+:root.dark-mode .login-box button:hover:not(:disabled) {
+  background: #388e3c;
+}
+
+:root.dark-mode .login-box button:disabled {
+  background: #555;
+}
+
 /* Number Pad */
 .number-pad {
   display: grid;
@@ -201,6 +226,28 @@
   border-color: #c82333;
 }
 
+:root.dark-mode .clear-btn {
+  background: #555;
+  color: #e0e0e0;
+  border-color: #555;
+}
+
+:root.dark-mode .clear-btn:hover {
+  background: #666;
+  border-color: #666;
+}
+
+:root.dark-mode .backspace-btn {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  border-color: var(--danger-bg);
+}
+
+:root.dark-mode .backspace-btn:hover {
+  background: #d32f2f;
+  border-color: #d32f2f;
+}
+
 /* Message */
 .message {
   padding: 15px;
@@ -214,6 +261,12 @@
   background: #d4edda;
   color: #155724;
   border: 1px solid #c3e6cb;
+}
+
+:root.dark-mode .message.success {
+  background: var(--success-bg);
+  color: var(--success-text);
+  border: 1px solid #2e7d32;
 }
 
 /* Clock Section */
@@ -243,6 +296,10 @@
   margin-bottom: 20px;
   color: white;
   font-size: 16px;
+}
+
+:root.dark-mode .attendance-streak {
+  background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
 }
 
 .streak-icon {
@@ -291,6 +348,15 @@
   background: #218838;
 }
 
+:root.dark-mode .btn-primary {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+:root.dark-mode .btn-primary:hover:not(:disabled) {
+  background: #2e7d32;
+}
+
 .btn-danger {
   padding: 20px 60px;
   background: #dc3545;
@@ -306,10 +372,25 @@
   background: #c82333;
 }
 
+:root.dark-mode .btn-danger {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+
+:root.dark-mode .btn-danger:hover:not(:disabled) {
+  background: #d32f2f;
+}
+
 .btn-primary:disabled,
 .btn-danger:disabled {
   background: #ccc;
   cursor: not-allowed;
+}
+
+:root.dark-mode .btn-primary:disabled,
+:root.dark-mode .btn-danger:disabled {
+  background: #555;
+  color: #888;
 }
 
 /* Shifts Section */
@@ -374,6 +455,15 @@
 
 .btn-print:hover {
   background: #218838;
+}
+
+:root.dark-mode .btn-print {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+:root.dark-mode .btn-print:hover {
+  background: #2e7d32;
 }
 
 .shifts-section h2 {
@@ -455,6 +545,16 @@ tfoot .total-row td {
   color: #856404;
 }
 
+:root.dark-mode .status.approved {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+:root.dark-mode .status.pending {
+  background: #5d4037;
+  color: #ffcc80;
+}
+
 /* Action Buttons */
 .action-buttons {
   display: flex;
@@ -477,6 +577,15 @@ tfoot .total-row td {
   background: #218838;
 }
 
+:root.dark-mode .btn-approve {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+:root.dark-mode .btn-approve:hover {
+  background: #2e7d32;
+}
+
 .btn-delete {
   padding: 6px 12px;
   background: #dc3545;
@@ -490,6 +599,15 @@ tfoot .total-row td {
 
 .btn-delete:hover {
   background: #c82333;
+}
+
+:root.dark-mode .btn-delete {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+
+:root.dark-mode .btn-delete:hover {
+  background: #d32f2f;
 }
 
 .btn-edit {
@@ -507,6 +625,15 @@ tfoot .total-row td {
   background: #0056b3;
 }
 
+:root.dark-mode .btn-edit {
+  background: #555;
+  color: #e0e0e0;
+}
+
+:root.dark-mode .btn-edit:hover {
+  background: #666;
+}
+
 .btn-save {
   padding: 6px 12px;
   background: #28a745;
@@ -522,6 +649,15 @@ tfoot .total-row td {
   background: #218838;
 }
 
+:root.dark-mode .btn-save {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+:root.dark-mode .btn-save:hover {
+  background: #2e7d32;
+}
+
 .btn-cancel {
   padding: 6px 12px;
   background: #6c757d;
@@ -535,6 +671,15 @@ tfoot .total-row td {
 
 .btn-cancel:hover {
   background: #5a6268;
+}
+
+:root.dark-mode .btn-cancel {
+  background: #555;
+  color: #e0e0e0;
+}
+
+:root.dark-mode .btn-cancel:hover {
+  background: #666;
 }
 
 /* Time Input */
@@ -610,6 +755,10 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   transition: all 0.3s ease;
 }
 
+:root.dark-mode .stat-card {
+  background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+}
+
 .stat-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -618,6 +767,11 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 .stat-card.warning {
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
   border: 2px solid #ffebee;
+}
+
+:root.dark-mode .stat-card.warning {
+  background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
+  border: 2px solid #b71c1c;
 }
 
 .stat-card.warning .stat-value {
@@ -696,6 +850,18 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   font-weight: bold;
   border: 1px solid #c8e6c9;
   white-space: nowrap;
+}
+
+:root.dark-mode .late-badge {
+  background-color: var(--danger-bg);
+  color: var(--danger-text);
+  border: 1px solid #d32f2f;
+}
+
+:root.dark-mode .exempt-badge {
+  background-color: var(--success-bg);
+  color: var(--success-text);
+  border: 1px solid #2e7d32;
 }
 
 /* Responsive Stats Cards */
@@ -1136,6 +1302,15 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   background: #c3e6cb;
 }
 
+:root.dark-mode .task-item.checked {
+  background: var(--success-bg);
+  border-color: var(--success-text);
+}
+
+:root.dark-mode .task-item.checked:hover {
+  background: #2e7d32;
+}
+
 .task-checkbox {
   font-size: 32px;
   flex-shrink: 0;
@@ -1167,6 +1342,10 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   font-weight: bold;
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
   animation: celebrate 1s ease-in-out;
+}
+
+:root.dark-mode .completion-celebration {
+  background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
 }
 
 @keyframes celebrate {
@@ -1402,6 +1581,19 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   transform: scale(0.95);
   background: #545b62;
 }
+
+:root.dark-mode .btn-add-task-inline {
+  background: #555;
+  color: #e0e0e0;
+}
+
+:root.dark-mode .btn-add-task-inline:hover {
+  background: #666;
+}
+
+:root.dark-mode .btn-add-task-inline:active {
+  background: #777;
+}
 .task-name-cell {
   padding: 12px !important;
   text-align: left;
@@ -1550,6 +1742,15 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 .checklist-item.checked:hover {
   background: #c3e6cb;
+}
+
+:root.dark-mode .checklist-item.checked {
+  background: var(--success-bg);
+  border-color: var(--success-text);
+}
+
+:root.dark-mode .checklist-item.checked:hover {
+  background: #2e7d32;
 }
 
 .checklist-item .checkbox {
