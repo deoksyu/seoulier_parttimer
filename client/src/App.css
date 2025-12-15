@@ -89,7 +89,7 @@
   position: relative;
 }
 
-.login-box::before {
+:root.dark-mode .login-box::before {
   content: '🎅';
   position: absolute;
   top: -20px;
@@ -836,7 +836,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 }
 
 :root.dark-mode .stat-card {
-  background: #1b5e20;
+  background: #b71c1c;
 }
 
 .stat-card:hover {
@@ -2542,6 +2542,10 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   align-items: center;
   justify-content: center;
   gap: 4px;
+}
+
+:root.dark-mode .day-number {
+  color: #ffffff;
 }
 
 .late-indicator {

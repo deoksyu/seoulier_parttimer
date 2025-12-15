@@ -1198,7 +1198,7 @@ function App() {
           onClick={toggleDarkMode}
           aria-label="Toggle dark mode"
         >
-          {darkMode ? '☀️' : '🌙'}
+          {darkMode ? '☀️' : '⛄'}
         </button>
       </div>
     );
@@ -1477,7 +1477,7 @@ function App() {
           onClick={toggleDarkMode}
           aria-label="Toggle dark mode"
         >
-          {darkMode ? '☀️' : '🌙'}
+          {darkMode ? '☀️' : '⛄'}
         </button>
       </div>
     );
@@ -1637,7 +1637,7 @@ function App() {
           onClick={toggleDarkMode}
           aria-label="Toggle dark mode"
         >
-          {darkMode ? '☀️' : '🌙'}
+          {darkMode ? '☀️' : '⛄'}
         </button>
       </div>
     );
@@ -3178,7 +3178,7 @@ function App() {
         onClick={toggleDarkMode}
         aria-label="Toggle dark mode"
       >
-        {darkMode ? '☀️' : '🌙'}
+        {darkMode ? '☀️' : '⛄'}
       </button>
     </div>
   );
