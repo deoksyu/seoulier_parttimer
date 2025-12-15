@@ -130,6 +130,26 @@ function App() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
   const [selectedStaff, setSelectedStaff] = useState('all');
+  
+  // Dark mode state
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    return saved ? JSON.parse(saved) : false;
+  });
+
+  // Apply dark mode to document root
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark-mode');
+    } else {
+      document.documentElement.classList.remove('dark-mode');
+    }
+    localStorage.setItem('darkMode', JSON.stringify(darkMode));
+  }, [darkMode]);
+
+  const toggleDarkMode = () => {
+    setDarkMode(prev => !prev);
+  };
 
   // Generate month options dynamically (current month + past 11 months)
   const generateMonthOptions = () => {
@@ -1171,6 +1191,15 @@ function App() {
           </form>
           {message && <div className="message">{message}</div>}
         </div>
+        
+        {/* Dark Mode Toggle Button */}
+        <button 
+          className="dark-mode-toggle" 
+          onClick={toggleDarkMode}
+          aria-label="Toggle dark mode"
+        >
+          {darkMode ? '☀️' : '🌙'}
+        </button>
       </div>
     );
   }
@@ -1441,6 +1470,15 @@ function App() {
             </div>
           </div>
         )}
+        
+        {/* Dark Mode Toggle Button */}
+        <button 
+          className="dark-mode-toggle" 
+          onClick={toggleDarkMode}
+          aria-label="Toggle dark mode"
+        >
+          {darkMode ? '☀️' : '🌙'}
+        </button>
       </div>
     );
   }
@@ -1592,6 +1630,15 @@ function App() {
             </tfoot>
           </table>
         </div>
+        
+        {/* Dark Mode Toggle Button */}
+        <button 
+          className="dark-mode-toggle" 
+          onClick={toggleDarkMode}
+          aria-label="Toggle dark mode"
+        >
+          {darkMode ? '☀️' : '🌙'}
+        </button>
       </div>
     );
   }
@@ -3124,6 +3171,15 @@ function App() {
           </div>
         </div>
       )}
+      
+      {/* Dark Mode Toggle Button */}
+      <button 
+        className="dark-mode-toggle" 
+        onClick={toggleDarkMode}
+        aria-label="Toggle dark mode"
+      >
+        {darkMode ? '☀️' : '🌙'}
+      </button>
     </div>
   );
 }

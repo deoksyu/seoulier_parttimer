@@ -1,3 +1,32 @@
+/* Dark Mode Toggle */
+.dark-mode-toggle {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  cursor: pointer;
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.dark-mode-toggle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+}
+
+.dark-mode-toggle:active {
+  transform: scale(0.95);
+}
+
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -10,14 +39,15 @@
   align-items: center;
   margin-bottom: 30px;
   padding: 20px;
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px var(--shadow);
+  transition: background-color 0.3s ease;
 }
 
 .header h1 {
   font-size: 24px;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .logout-btn {
@@ -39,9 +69,10 @@
   max-width: 400px;
   margin: 100px auto;
   padding: 40px;
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 6px var(--shadow);
+  transition: background-color 0.3s ease;
 }
 
 .login-logo {
@@ -55,7 +86,7 @@
 .login-box h1 {
   text-align: center;
   margin-bottom: 10px;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 16px;
   font-weight: normal;
 }
@@ -63,7 +94,7 @@
 .login-box .subtitle {
   text-align: center;
   margin-bottom: 30px;
-  color: #333;
+  color: var(--text-primary);
   font-size: 28px;
   font-weight: bold;
 }
@@ -76,11 +107,14 @@
 
 .login-box input {
   padding: 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-light);
   border-radius: 4px;
   font-size: 14px;
   width: 100%;
   box-sizing: border-box;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .pin-input {
@@ -123,26 +157,26 @@
   min-height: 70px;
   font-size: 60px;
   font-weight: bold;
-  background: #f8f9fa;
-  border: 2px solid #dee2e6;
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-color);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
-  color: #333;
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .num-btn:hover {
-  background: #e9ecef;
+  background: var(--hover-bg);
   border-color: #007bff;
   transform: scale(1.05);
 }
 
 .num-btn:active {
   transform: scale(0.95);
-  background: #dee2e6;
+  background: var(--border-color);
 }
 
 .clear-btn {
@@ -184,17 +218,18 @@
 
 /* Clock Section */
 .clock-section {
-  background: white;
+  background: var(--bg-secondary);
   padding: 30px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px var(--shadow);
   margin-bottom: 30px;
   text-align: center;
+  transition: background-color 0.3s ease;
 }
 
 .clock-section h2 {
   margin-bottom: 15px;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .attendance-streak {
@@ -279,11 +314,12 @@
 
 /* Shifts Section */
 .shifts-section {
-  background: white;
+  background: var(--bg-secondary);
   padding: 30px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px var(--shadow);
   margin-bottom: 20px;
+  transition: background-color 0.3s ease;
 }
 
 .section-header {
@@ -295,7 +331,7 @@
 
 .section-header h2 {
   margin: 0;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .header-controls {
@@ -306,11 +342,13 @@
 
 .month-selector {
   padding: 8px 16px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-light);
   border-radius: 4px;
   font-size: 14px;
   cursor: pointer;
-  background: white;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .month-selector:hover {
@@ -340,7 +378,7 @@
 
 .shifts-section h2 {
   margin-bottom: 20px;
-  color: #333;
+  color: var(--text-primary);
 }
 
 /* Table */
@@ -350,24 +388,25 @@ table {
 }
 
 thead {
-  background: #f8f9fa;
+  background: var(--bg-tertiary);
 }
 
 th {
   padding: 12px;
   text-align: left;
   font-weight: bold;
-  color: #333;
-  border-bottom: 2px solid #dee2e6;
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border-color);
 }
 
 td {
   padding: 12px;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
 }
 
 tbody tr:hover {
-  background: #f8f9fa;
+  background: var(--bg-tertiary);
 }
 
 .clickable-row {
@@ -501,12 +540,15 @@ tfoot .total-row td {
 /* Time Input */
 .time-input {
   padding: 6px 10px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-light);
   border-radius: 4px;
   font-size: 14px;
   width: 110px;
   font-family: 'Courier New', monospace;
   text-align: center;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .time-input:focus {
@@ -949,18 +991,19 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 }
 
 .cleaning-summary {
-  background: white;
+  background: var(--bg-secondary);
   padding: 30px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px var(--shadow);
   margin-bottom: 20px;
   text-align: center;
   box-sizing: border-box;
+  transition: background-color 0.3s ease;
 }
 
 .cleaning-summary h2 {
   margin-bottom: 20px;
-  color: #333;
+  color: var(--text-primary);
   font-size: 24px;
 }
 
@@ -1025,7 +1068,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 .progress-info {
   font-size: 18px;
-  color: #666;
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -1035,11 +1078,12 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 }
 
 .cleaning-tasks-section {
-  background: white;
+  background: var(--bg-secondary);
   padding: 30px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px var(--shadow);
   margin-bottom: 20px;
+  transition: background-color 0.3s ease;
 }
 
 .category-section {
@@ -1053,10 +1097,10 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 .category-title {
   font-size: 20px;
   font-weight: bold;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 15px;
   padding-bottom: 10px;
-  border-bottom: 2px solid #e9ecef;
+  border-bottom: 2px solid var(--border-color);
 }
 
 .tasks-list {
@@ -1070,15 +1114,15 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   align-items: center;
   gap: 15px;
   padding: 15px;
-  background: #f8f9fa;
-  border: 2px solid #e9ecef;
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-color);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .task-item:hover {
-  background: #e9ecef;
+  background: var(--hover-bg);
   border-color: #007bff;
   transform: translateX(5px);
 }
@@ -1104,13 +1148,13 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 .task-title {
   font-size: 16px;
   font-weight: 500;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 4px;
 }
 
 .task-info {
   font-size: 13px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .completion-celebration {
@@ -1202,16 +1246,17 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 /* ==================== WEEKLY TABLE STYLES ==================== */
 
 .weekly-table-section {
-  background: white;
+  background: var(--bg-secondary);
   padding: 30px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px var(--shadow);
   margin-bottom: 20px;
+  transition: background-color 0.3s ease;
 }
 
 .weekly-table-section h2 {
   margin-bottom: 20px;
-  color: #333;
+  color: var(--text-primary);
   font-size: 22px;
 }
 
@@ -1223,9 +1268,10 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 .weekly-cleaning-table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
+  background: var(--bg-secondary);
   font-size: 20px;
   table-layout: fixed;
+  transition: background-color 0.3s ease;
 }
 
 .weekly-cleaning-table tbody tr {
@@ -1242,7 +1288,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 }
 
 .weekly-cleaning-table thead {
-  background: #f8f9fa;
+  background: var(--bg-tertiary);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -1252,9 +1298,9 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   padding: 12px 8px;
   text-align: center;
   font-weight: bold;
-  color: #333;
-  border: 2px solid #dee2e6;
-  background: #f8f9fa;
+  color: var(--text-primary);
+  border: 2px solid var(--border-color);
+  background: var(--bg-tertiary);
   width: 80px;
   height: 80px;
 }
@@ -1267,7 +1313,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   position: sticky;
   left: 0;
   z-index: 11;
-  background: #f8f9fa !important;
+  background: var(--bg-tertiary) !important;
 }
 
 .day-header {
@@ -1284,7 +1330,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 .day-num {
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
   position: relative;
   display: inline-block;
 }
@@ -1305,16 +1351,16 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 }
 
 .category-row {
-  background: #e9ecef;
+  background: var(--bg-tertiary);
 }
 
 .category-header {
   padding: 10px 12px;
   font-weight: bold;
   font-size: 23px;
-  color: #333;
+  color: var(--text-primary);
   text-align: left;
-  border: 2px solid #dee2e6;
+  border: 2px solid var(--border-color);
   position: relative;
 }
 
@@ -1372,11 +1418,13 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   white-space: nowrap;
   box-sizing: border-box;
   font-size: 17px !important;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
 .check-cell {
   padding: 0 !important;
   text-align: center;
-  border: 2px solid #dee2e6;
+  border: 2px solid var(--border-color);
   font-size: 48px;
   font-weight: bold;
   color: white;
@@ -1386,7 +1434,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   min-width: 100px;
   max-width: 100px;
   height: 60px !important;
-  background: white;
+  background: var(--bg-secondary);
   vertical-align: middle;
   overflow: hidden;
   box-sizing: border-box;
@@ -1448,16 +1496,17 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 /* ==================== ADDITIONAL CHECKLISTS ==================== */
 
 .additional-checklist-section {
-  background: white;
+  background: var(--bg-secondary);
   padding: 30px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px var(--shadow);
   margin-bottom: 20px;
+  transition: background-color 0.3s ease;
 }
 
 .additional-checklist-section h2 {
   margin-bottom: 20px;
-  color: #333;
+  color: var(--text-primary);
   font-size: 22px;
 }
 
@@ -1468,7 +1517,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 }
 
 .checklist-subtitle {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 14px;
   margin-bottom: 15px;
   font-style: italic;
@@ -1476,12 +1525,12 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 .checklist-item {
   padding: 15px 20px;
-  background: #f8f9fa;
-  border: 2px solid #dee2e6;
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-color);
   border-radius: 8px;
   font-size: 16px;
   font-weight: 500;
-  color: #333;
+  color: var(--text-primary);
   transition: all 0.2s;
   display: flex;
   align-items: center;
@@ -1489,7 +1538,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 }
 
 .checklist-item:hover {
-  background: #e9ecef;
+  background: var(--hover-bg);
   border-color: #007bff;
   transform: translateX(3px);
 }
@@ -1514,7 +1563,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 .checklist-item .check-time {
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
   font-weight: normal;
 }
 
