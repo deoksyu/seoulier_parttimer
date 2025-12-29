@@ -2702,8 +2702,13 @@ input[type="time"]::-webkit-calendar-picker-indicator {
     overflow-x: auto;
   }
 
+  .calendar-day {
+    min-width: 50px;
+  }
+
   .calendar-day.work-day {
     min-height: 70px;
+    min-width: 50px;
     padding: 3px;
   }
 
