@@ -1846,11 +1846,12 @@ function App() {
                         const uniqueWorkers = new Set(dayData.shifts.map(s => s.name)).size;
                         const hasLateWorkers = dayData.shifts.some(shift => shift.is_late === 1 && shift.late_exempt !== 1);
                         const hasModifiedShifts = dayData.shifts.some(shift => shift.is_modified === 1);
+                        const allApproved = dayData.shifts.length > 0 && dayData.shifts.every(shift => shift.status === 'approved');
                         
                         return (
                           <div 
                             key={dayIdx} 
-                            className={`calendar-day work-day ${isToday ? 'today' : ''} ${dayData.shifts.length > 0 ? 'has-data' : ''}`}
+                            className={`calendar-day work-day ${isToday ? 'today' : ''} ${dayData.shifts.length > 0 ? 'has-data' : ''} ${allApproved ? 'all-approved' : ''}`}
                             onClick={() => {
                               if (dayData.shifts.length > 0) {
                                 setSelectedWorkDay({
