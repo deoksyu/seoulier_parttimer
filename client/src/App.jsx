@@ -234,11 +234,10 @@ function App() {
         loadShifts();
         if (user.role === 'admin') {
           loadStatistics();
+          loadEmployees(); // Load employees for all admin tabs
           if (adminTab === 'cleaning') {
             loadAdminCleaningStats();
             loadCleaningTasks(); // Load cleaning tasks for etc indicator
-          } else if (adminTab === 'hr') {
-            loadEmployees();
           }
         }
       }
