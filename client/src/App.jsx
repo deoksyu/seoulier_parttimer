@@ -1892,11 +1892,17 @@ function App() {
 
         {/* 근무 상세 모달 */}
         {showWorkDayModal && selectedWorkDay && (
-          <div className="modal-overlay" onClick={() => setShowWorkDayModal(false)}>
+          <div className="modal-overlay" onClick={() => {
+            setShowWorkDayModal(false);
+            setShowAddShiftForm(false);
+          }}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2>📋 {selectedWorkDay.date} 근무 기록</h2>
-                <button className="modal-close" onClick={() => setShowWorkDayModal(false)}>✕</button>
+                <button className="modal-close" onClick={() => {
+                  setShowWorkDayModal(false);
+                  setShowAddShiftForm(false);
+                }}>✕</button>
               </div>
               <div className="modal-body">
                 <div className="work-day-summary">
@@ -2009,6 +2015,8 @@ function App() {
                           return;
                         }
                         try {
+                          console.log('Sending request to:', `${API_URL}/shifts/manual`);
+                          console.log('Form data:', newShiftForm);
                           const response = await axios.post(`${API_URL}/shifts/manual`, newShiftForm);
                           if (response.data.success) {
                             setMessage('출근 기록이 추가되었습니다');
