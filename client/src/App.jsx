@@ -197,6 +197,13 @@ function App() {
   const [autoLogoutTimer, setAutoLogoutTimer] = useState(null); // 자동 로그아웃 타이머
   const [editingEmployee, setEditingEmployee] = useState(null); // 수정 중인 직원 ID
   const [isCustomPosition, setIsCustomPosition] = useState(false); // 직급 수기 입력 모드
+  const [showAddShiftForm, setShowAddShiftForm] = useState(false); // 수동 출근 기록 추가 폼
+  const [newShiftForm, setNewShiftForm] = useState({ // 수동 출근 기록 폼
+    user_id: '',
+    date: '',
+    start_time: '09:00',
+    end_time: '18:00'
+  });
   const [editForm, setEditForm] = useState({ // 직원 수정 폼
     name: '',
     pin: '',
@@ -1913,6 +1920,133 @@ function App() {
                     </span>
                   </div>
                 </div>
+                
+                {/* Add Shift Button */}
+                <button 
+                  onClick={() => {
+                    setShowAddShiftForm(!showAddShiftForm);
+                    setNewShiftForm({
+                      user_id: '',
+                      date: selectedWorkDay.date,
+                      start_time: '09:00',
+                      end_time: '18:00'
+                    });
+                  }}
+                  className="btn-add-shift"
+                  style={{
+                    marginBottom: '15px',
+                    padding: '10px 20px',
+                    background: '#28a745',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  {showAddShiftForm ? '✕ 취소' : '+ 직원 추가'}
+                </button>
+                
+                {/* Add Shift Form */}
+                {showAddShiftForm && (
+                  <div className="add-shift-form" style={{
+                    background: '#f8f9fa',
+                    padding: '15px',
+                    borderRadius: '8px',
+                    marginBottom: '15px',
+                    border: '2px solid #28a745'
+                  }}>
+                    <h4 style={{ marginTop: 0, marginBottom: '15px' }}>📝 직원 추가</h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', fontWeight: 'bold' }}>직원</label>
+                        <select
+                          value={newShiftForm.user_id}
+                          onChange={(e) => setNewShiftForm({ ...newShiftForm, user_id: e.target.value })}
+                          style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+                        >
+                          <option value="">선택하세요</option>
+                          {employees
+                            .filter(emp => !selectedWorkDay.shifts.some(s => s.user_id === emp.id))
+                            .map(emp => (
+                              <option key={emp.id} value={emp.id}>{emp.name}</option>
+                            ))
+                          }
+                        </select>
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', fontWeight: 'bold' }}>날짜</label>
+                        <input
+                          type="date"
+                          value={newShiftForm.date}
+                          onChange={(e) => setNewShiftForm({ ...newShiftForm, date: e.target.value })}
+                          style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', fontWeight: 'bold' }}>출근 시간</label>
+                        <input
+                          type="time"
+                          value={newShiftForm.start_time}
+                          onChange={(e) => setNewShiftForm({ ...newShiftForm, start_time: e.target.value })}
+                          style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px', fontWeight: 'bold' }}>퇴근 시간</label>
+                        <input
+                          type="time"
+                          value={newShiftForm.end_time}
+                          onChange={(e) => setNewShiftForm({ ...newShiftForm, end_time: e.target.value })}
+                          style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+                        />
+                      </div>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        if (!newShiftForm.user_id) {
+                          alert('직원을 선택해주세요');
+                          return;
+                        }
+                        try {
+                          const response = await axios.post(`${API_URL}/shifts/manual`, newShiftForm);
+                          if (response.data.success) {
+                            setMessage('출근 기록이 추가되었습니다');
+                            setShowAddShiftForm(false);
+                            loadShifts();
+                            loadStatistics();
+                            // Refresh modal data
+                            const updatedShifts = await axios.get(`${API_URL}/shifts`, {
+                              params: { month: selectedMonth, userId: selectedStaff === 'all' ? undefined : selectedStaff }
+                            });
+                            const dayShifts = updatedShifts.data.shifts.filter(s => s.date === selectedWorkDay.date);
+                            setSelectedWorkDay({
+                              date: selectedWorkDay.date,
+                              shifts: dayShifts
+                            });
+                          }
+                        } catch (error) {
+                          console.error('Add shift error:', error);
+                          alert(error.response?.data?.message || '출근 기록 추가 중 오류가 발생했습니다');
+                        }
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        background: '#007bff',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      추가
+                    </button>
+                  </div>
+                )}
                 
                 <table className="work-detail-table">
                   <thead>

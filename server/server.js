@@ -446,6 +446,88 @@ app.put('/api/shifts/:id/approve', (req, res) => {
   });
 });
 
+// Create manual shift (admin only)
+app.post('/api/shifts/manual', (req, res) => {
+  const { user_id, date, start_time, end_time } = req.body;
+  
+  // Validation
+  if (!user_id || !date || !start_time || !end_time) {
+    return res.status(400).json({ success: false, message: '모든 필드를 입력해주세요' });
+  }
+  
+  // Check if shift already exists for this user on this date
+  db.get('SELECT id FROM shifts WHERE user_id = ? AND date = ?', [user_id, date], (err, existingShift) => {
+    if (err) {
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+    
+    if (existingShift) {
+      return res.status(400).json({ success: false, message: '해당 날짜에 이미 출근 기록이 있습니다' });
+    }
+    
+    // Calculate work hours
+    const workHours = calculateWorkHours(start_time, end_time);
+    
+    // Get user's regular start time for late check
+    db.get('SELECT regular_start_time FROM users WHERE id = ?', [user_id], (err, user) => {
+      if (err) {
+        return res.status(500).json({ success: false, message: 'Database error' });
+      }
+      
+      let isLate = 0;
+      let lateMinutes = 0;
+      
+      // Check if late
+      if (user && user.regular_start_time) {
+        const regularParts = user.regular_start_time.split(':');
+        const actualParts = start_time.split(':');
+        
+        const regularHour = parseInt(regularParts[0]);
+        const regularMin = parseInt(regularParts[1]);
+        const actualHour = parseInt(actualParts[0]);
+        const actualMin = parseInt(actualParts[1]);
+        
+        const regularMinutes = regularHour * 60 + regularMin;
+        const actualMinutes = actualHour * 60 + actualMin;
+        
+        if (actualMinutes > regularMinutes) {
+          isLate = 1;
+          lateMinutes = actualMinutes - regularMinutes;
+        }
+      }
+      
+      // Insert shift with approved status and modified flag
+      db.run(
+        'INSERT INTO shifts (user_id, date, start_time, end_time, work_hours, status, is_modified, is_late, late_minutes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [user_id, date, start_time, end_time, workHours, 'approved', 1, isLate, lateMinutes],
+        function(err) {
+          if (err) {
+            console.error('Insert error:', err);
+            return res.status(500).json({ success: false, message: 'Database error' });
+          }
+          
+          res.json({
+            success: true,
+            message: '출근 기록이 추가되었습니다',
+            shift: {
+              id: this.lastID,
+              user_id,
+              date,
+              start_time,
+              end_time,
+              work_hours: workHours,
+              status: 'approved',
+              is_modified: 1,
+              is_late: isLate,
+              late_minutes: lateMinutes
+            }
+          });
+        }
+      );
+    });
+  });
+});
+
 // Update shift
 app.put('/api/shifts/:id', (req, res) => {
   const { id } = req.params;
