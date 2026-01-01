@@ -204,7 +204,6 @@ function App() {
     start_time: '09:00',
     end_time: '18:00'
   });
-  const [workDaySortBy, setWorkDaySortBy] = useState('pin_asc'); // 근무 기록 모달 정렬 (pin_asc, pin_desc, name_asc, name_desc, workplace_asc, workplace_desc)
   const [editForm, setEditForm] = useState({ // 직원 수정 폼
     name: '',
     pin: '',
@@ -1927,79 +1926,32 @@ function App() {
                   </div>
                 </div>
                 
-                {/* Sort and Add Buttons */}
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', flexWrap: 'wrap' }}>
-                  <button 
-                    onClick={() => {
-                      setShowAddShiftForm(!showAddShiftForm);
-                      setNewShiftForm({
-                        user_id: '',
-                        date: selectedWorkDay.date,
-                        start_time: '09:00',
-                        end_time: '18:00'
-                      });
-                    }}
-                    className="btn-add-shift"
-                    style={{
-                      padding: '10px 20px',
-                      background: '#28a745',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: 'bold'
-                    }}
-                  >
-                    {showAddShiftForm ? '✕ 취소' : '+ 근무기록 추가'}
-                  </button>
-                  
-                  {/* Sort Buttons */}
-                  <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
-                    <button
-                      onClick={() => setWorkDaySortBy(workDaySortBy === 'pin_asc' ? 'pin_desc' : 'pin_asc')}
-                      style={{
-                        padding: '8px 12px',
-                        background: workDaySortBy.startsWith('pin') ? '#007bff' : '#6c757d',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontSize: '12px'
-                      }}
-                    >
-                      PIN {workDaySortBy === 'pin_asc' ? '↑' : workDaySortBy === 'pin_desc' ? '↓' : ''}
-                    </button>
-                    <button
-                      onClick={() => setWorkDaySortBy(workDaySortBy === 'name_asc' ? 'name_desc' : 'name_asc')}
-                      style={{
-                        padding: '8px 12px',
-                        background: workDaySortBy.startsWith('name') ? '#007bff' : '#6c757d',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontSize: '12px'
-                      }}
-                    >
-                      이름 {workDaySortBy === 'name_asc' ? '↑' : workDaySortBy === 'name_desc' ? '↓' : ''}
-                    </button>
-                    <button
-                      onClick={() => setWorkDaySortBy(workDaySortBy === 'workplace_asc' ? 'workplace_desc' : 'workplace_asc')}
-                      style={{
-                        padding: '8px 12px',
-                        background: workDaySortBy.startsWith('workplace') ? '#007bff' : '#6c757d',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontSize: '12px'
-                      }}
-                    >
-                      근무지 {workDaySortBy === 'workplace_asc' ? '↑' : workDaySortBy === 'workplace_desc' ? '↓' : ''}
-                    </button>
-                  </div>
-                </div>
+                {/* Add Shift Button */}
+                <button 
+                  onClick={() => {
+                    setShowAddShiftForm(!showAddShiftForm);
+                    setNewShiftForm({
+                      user_id: '',
+                      date: selectedWorkDay.date,
+                      start_time: '09:00',
+                      end_time: '18:00'
+                    });
+                  }}
+                  className="btn-add-shift"
+                  style={{
+                    marginBottom: '15px',
+                    padding: '10px 20px',
+                    background: '#28a745',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  {showAddShiftForm ? '✕ 취소' : '+ 근무기록 추가'}
+                </button>
                 
                 {/* Add Shift Form */}
                 {showAddShiftForm && (
@@ -2118,22 +2070,9 @@ function App() {
                   </thead>
                   <tbody>
                     {(() => {
-                      // Sort shifts based on workDaySortBy
+                      // Sort shifts by PIN ascending (fixed)
                       const sortedShifts = [...selectedWorkDay.shifts].sort((a, b) => {
-                        if (workDaySortBy === 'pin_asc') {
-                          return (a.pin || '').localeCompare(b.pin || '');
-                        } else if (workDaySortBy === 'pin_desc') {
-                          return (b.pin || '').localeCompare(a.pin || '');
-                        } else if (workDaySortBy === 'name_asc') {
-                          return (a.name || '').localeCompare(b.name || '');
-                        } else if (workDaySortBy === 'name_desc') {
-                          return (b.name || '').localeCompare(a.name || '');
-                        } else if (workDaySortBy === 'workplace_asc') {
-                          return (a.workplace || '').localeCompare(b.workplace || '');
-                        } else if (workDaySortBy === 'workplace_desc') {
-                          return (b.workplace || '').localeCompare(a.workplace || '');
-                        }
-                        return 0;
+                        return (a.pin || '').localeCompare(b.pin || '');
                       });
                       
                       return sortedShifts.map(shift => (
