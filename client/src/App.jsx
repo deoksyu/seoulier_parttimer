@@ -1802,8 +1802,9 @@ function App() {
             const weeks = [];
             let currentWeek = [];
             
-            // Add empty cells for days before month starts
-            for (let i = 0; i < firstDay; i++) {
+            // Add empty cells for days before month starts (Monday = 0)
+            const adjustedFirstDay = firstDay === 0 ? 6 : firstDay - 1;
+            for (let i = 0; i < adjustedFirstDay; i++) {
               currentWeek.push(null);
             }
             
@@ -1835,7 +1836,7 @@ function App() {
             return (
               <div className="calendar-grid">
                 <div className="calendar-header">
-                  {['일', '월', '화', '수', '목', '금', '토'].map(day => (
+                  {['월', '화', '수', '목', '금', '토', '일'].map(day => (
                     <div key={day} className="calendar-day-name">{day}</div>
                   ))}
                 </div>
@@ -2448,8 +2449,9 @@ function App() {
                     const weeks = [];
                     let currentWeek = [];
                     
-                    // Add empty cells for days before month starts
-                    for (let i = 0; i < firstDay; i++) {
+                    // Add empty cells for days before month starts (Monday = 0)
+                    const adjustedFirstDay = firstDay === 0 ? 6 : firstDay - 1;
+                    for (let i = 0; i < adjustedFirstDay; i++) {
                       currentWeek.push(null);
                     }
                     
