@@ -1825,7 +1825,7 @@ function App() {
               }
             }
             
-            // Fill last week with next month dates
+            // Fill last week with next month dates (with actual data)
             if (currentWeek.length > 0 && currentWeek.length < 7) {
               let nextMonthDay = 1;
               const nextMonth = month === '12' ? '01' : String(parseInt(month) + 1).padStart(2, '0');
@@ -1833,10 +1833,11 @@ function App() {
               
               while (currentWeek.length < 7) {
                 const dateStr = `${nextYear}-${nextMonth}-${String(nextMonthDay).padStart(2, '0')}`;
+                const dayShifts = shiftsMap[dateStr] || [];
                 currentWeek.push({
                   day: nextMonthDay,
                   date: dateStr,
-                  shifts: [],
+                  shifts: dayShifts,
                   isNextMonth: true
                 });
                 nextMonthDay++;
@@ -2486,7 +2487,7 @@ function App() {
                       }
                     }
                     
-                    // Fill last week with next month dates
+                    // Fill last week with next month dates (with actual data)
                     if (currentWeek.length > 0 && currentWeek.length < 7) {
                       let nextMonthDay = 1;
                       const nextMonth = month === '12' ? '01' : String(parseInt(month) + 1).padStart(2, '0');
@@ -2494,10 +2495,11 @@ function App() {
                       
                       while (currentWeek.length < 7) {
                         const dateStr = `${nextYear}-${nextMonth}-${String(nextMonthDay).padStart(2, '0')}`;
+                        const stat = statsMap[dateStr];
                         currentWeek.push({
                           day: nextMonthDay,
                           date: dateStr,
-                          stat: null,
+                          stat: stat,
                           isNextMonth: true
                         });
                         nextMonthDay++;
