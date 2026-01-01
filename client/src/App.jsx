@@ -1825,9 +1825,22 @@ function App() {
               }
             }
             
-            // Fill last week with empty cells
-            while (currentWeek.length > 0 && currentWeek.length < 7) {
-              currentWeek.push(null);
+            // Fill last week with next month dates
+            if (currentWeek.length > 0 && currentWeek.length < 7) {
+              let nextMonthDay = 1;
+              const nextMonth = month === '12' ? '01' : String(parseInt(month) + 1).padStart(2, '0');
+              const nextYear = month === '12' ? String(parseInt(year) + 1) : year;
+              
+              while (currentWeek.length < 7) {
+                const dateStr = `${nextYear}-${nextMonth}-${String(nextMonthDay).padStart(2, '0')}`;
+                currentWeek.push({
+                  day: nextMonthDay,
+                  date: dateStr,
+                  shifts: [],
+                  isNextMonth: true
+                });
+                nextMonthDay++;
+              }
             }
             if (currentWeek.length > 0) {
               weeks.push(currentWeek);
@@ -1858,7 +1871,7 @@ function App() {
                         return (
                           <div 
                             key={dayIdx} 
-                            className={`calendar-day work-day ${isToday ? 'today' : ''} ${dayData.shifts.length > 0 ? 'has-data' : ''} ${allApproved ? 'all-approved' : ''}`}
+                            className={`calendar-day work-day ${isToday ? 'today' : ''} ${dayData.shifts.length > 0 ? 'has-data' : ''} ${allApproved ? 'all-approved' : ''} ${dayData.isNextMonth ? 'next-month' : ''}`}
                             onClick={() => {
                               if (dayData.shifts.length > 0) {
                                 setSelectedWorkDay({
@@ -1868,8 +1881,9 @@ function App() {
                                 setShowWorkDayModal(true);
                               }
                             }}
+                            style={dayData.isNextMonth ? { opacity: 0.4 } : {}}
                           >
-                            <div className="day-number">
+                            <div className="day-number" style={dayData.isNextMonth ? { color: '#999' } : {}}>
                               {dayData.day}
                               {hasModifiedShifts && <span className="modified-indicator"></span>}
                               {hasLateWorkers && <span className="late-indicator"></span>}
@@ -2472,9 +2486,22 @@ function App() {
                       }
                     }
                     
-                    // Fill last week with empty cells
-                    while (currentWeek.length > 0 && currentWeek.length < 7) {
-                      currentWeek.push(null);
+                    // Fill last week with next month dates
+                    if (currentWeek.length > 0 && currentWeek.length < 7) {
+                      let nextMonthDay = 1;
+                      const nextMonth = month === '12' ? '01' : String(parseInt(month) + 1).padStart(2, '0');
+                      const nextYear = month === '12' ? String(parseInt(year) + 1) : year;
+                      
+                      while (currentWeek.length < 7) {
+                        const dateStr = `${nextYear}-${nextMonth}-${String(nextMonthDay).padStart(2, '0')}`;
+                        currentWeek.push({
+                          day: nextMonthDay,
+                          date: dateStr,
+                          stat: null,
+                          isNextMonth: true
+                        });
+                        nextMonthDay++;
+                      }
                     }
                     if (currentWeek.length > 0) {
                       weeks.push(currentWeek);
@@ -2483,7 +2510,7 @@ function App() {
                     return (
                       <div className="calendar-grid">
                         <div className="calendar-header">
-                          {['일', '월', '화', '수', '목', '금', '토'].map(day => (
+                          {['월', '화', '수', '목', '금', '토', '일'].map(day => (
                             <div key={day} className="calendar-day-name">{day}</div>
                           ))}
                         </div>
@@ -2515,7 +2542,7 @@ function App() {
                                 return (
                                   <div 
                                     key={dayIdx} 
-                                    className={`calendar-day ${isToday ? 'today' : ''} ${dayData.stat ? 'has-data' : 'clickable'}`}
+                                    className={`calendar-day ${isToday ? 'today' : ''} ${dayData.stat ? 'has-data' : 'clickable'} ${dayData.isNextMonth ? 'next-month' : ''}`}
                                     onClick={() => {
                                       console.log('Calendar day clicked:', dayData.date);
                                       setSelectedDayDetail({
@@ -2528,8 +2555,9 @@ function App() {
                                       setShowDayDetailModal(true);
                                       console.log('Modal should open now');
                                     }}
+                                    style={dayData.isNextMonth ? { opacity: 0.4 } : {}}
                                   >
-                                    <div className="day-number">
+                                    <div className="day-number" style={dayData.isNextMonth ? { color: '#999' } : {}}>
                                       {dayData.day}
                                       {hasEtcItems && <span className="etc-indicator-calendar"></span>}
                                     </div>
