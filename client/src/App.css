@@ -2451,12 +2451,12 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   color: #495057;
 }
 
-.calendar-day-name:first-child {
-  color: #dc3545;
+.calendar-day-name:nth-child(6) {
+  color: #007bff;
 }
 
 .calendar-day-name:last-child {
-  color: #007bff;
+  color: #dc3545;
 }
 
 :root.dark-mode .calendar-day-name {
@@ -2464,12 +2464,12 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   color: var(--text-primary);
 }
 
-:root.dark-mode .calendar-day-name:first-child {
-  color: #ff6b6b;
+:root.dark-mode .calendar-day-name:nth-child(6) {
+  color: #4dabf7;
 }
 
 :root.dark-mode .calendar-day-name:last-child {
-  color: #4dabf7;
+  color: #ff6b6b;
 }
 
 .calendar-body {
