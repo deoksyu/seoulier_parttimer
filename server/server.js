@@ -389,7 +389,7 @@ app.get('/api/shifts', (req, res) => {
   const { userId, role, month, staffId } = req.query;
   
   let query = `
-    SELECT s.*, u.name, u.username, u.pin, u.workplace 
+    SELECT s.*, u.name, u.username, u.pin, u.workplace, u.position 
     FROM shifts s 
     JOIN users u ON s.user_id = u.id
   `;

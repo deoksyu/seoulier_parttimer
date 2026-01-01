@@ -2107,6 +2107,7 @@ function App() {
                   <thead>
                     <tr>
                       <th>이름</th>
+                      <th>직급</th>
                       <th>출근 시간</th>
                       <th>퇴근 시간</th>
                       <th>근무 시간</th>
@@ -2139,6 +2140,7 @@ function App() {
                       editingShift && editingShift.id === shift.id ? (
                         <tr key={shift.id} className="editing-row">
                           <td><strong>{shift.name}</strong></td>
+                          <td>{shift.position || '-'}</td>
                           <td>
                             <input
                               type="text"
@@ -2259,6 +2261,7 @@ function App() {
                             <strong>{shift.name}</strong>
                             {shift.is_modified && <span className="modified-badge" style={{ marginLeft: '8px' }}>✏️ 수정됨</span>}
                           </td>
+                          <td>{shift.position || '-'}</td>
                           <td>{shift.start_time}</td>
                           <td>{shift.end_time || '-'}</td>
                           <td><strong>{shift.work_hours ? `${shift.work_hours}시간` : '-'}</strong></td>
