@@ -339,16 +339,36 @@ function App() {
   // Load shifts
   const loadShifts = async () => {
     try {
-      const response = await axios.get(`${API_URL}/shifts`, {
-        params: { 
-          userId: user.id, 
-          role: user.role,
-          month: selectedMonth,
-          staffId: selectedStaff
-        }
-      });
-      if (response.data.success) {
-        setShifts(response.data.shifts);
+      // Calculate next month for calendar display
+      const [year, month] = selectedMonth.split('-');
+      const nextMonth = month === '12' ? '01' : String(parseInt(month) + 1).padStart(2, '0');
+      const nextYear = month === '12' ? String(parseInt(year) + 1) : year;
+      const nextMonthStr = `${nextYear}-${nextMonth}`;
+      
+      // Fetch both current and next month data
+      const [currentResponse, nextResponse] = await Promise.all([
+        axios.get(`${API_URL}/shifts`, {
+          params: { 
+            userId: user.id, 
+            role: user.role,
+            month: selectedMonth,
+            staffId: selectedStaff
+          }
+        }),
+        axios.get(`${API_URL}/shifts`, {
+          params: { 
+            userId: user.id, 
+            role: user.role,
+            month: nextMonthStr,
+            staffId: selectedStaff
+          }
+        })
+      ]);
+      
+      if (currentResponse.data.success && nextResponse.data.success) {
+        // Combine both months' data
+        const combinedShifts = [...currentResponse.data.shifts, ...nextResponse.data.shifts];
+        setShifts(combinedShifts);
       }
     } catch (error) {
       console.error('Failed to load shifts:', error);
@@ -986,14 +1006,29 @@ function App() {
   // Load admin cleaning statistics
   const loadAdminCleaningStats = async () => {
     try {
-      const response = await axios.get(`${API_URL}/admin-cleaning-stats`, {
-        params: { month: selectedMonth }
-      });
-      if (response.data.success) {
+      // Calculate next month for calendar display
+      const [year, month] = selectedMonth.split('-');
+      const nextMonth = month === '12' ? '01' : String(parseInt(month) + 1).padStart(2, '0');
+      const nextYear = month === '12' ? String(parseInt(year) + 1) : year;
+      const nextMonthStr = `${nextYear}-${nextMonth}`;
+      
+      // Fetch both current and next month data
+      const [currentResponse, nextResponse] = await Promise.all([
+        axios.get(`${API_URL}/admin-cleaning-stats`, {
+          params: { month: selectedMonth }
+        }),
+        axios.get(`${API_URL}/admin-cleaning-stats`, {
+          params: { month: nextMonthStr }
+        })
+      ]);
+      
+      if (currentResponse.data.success && nextResponse.data.success) {
+        // Combine both months' stats
+        const combinedStats = [...currentResponse.data.stats, ...nextResponse.data.stats];
         setAdminCleaningStats({
-          stats: response.data.stats,
-          monthlyCompletionRate: response.data.monthlyCompletionRate || 0,
-          consecutiveDays: response.data.consecutiveDays || 0
+          stats: combinedStats,
+          monthlyCompletionRate: currentResponse.data.monthlyCompletionRate || 0,
+          consecutiveDays: currentResponse.data.consecutiveDays || 0
         });
       }
     } catch (error) {
