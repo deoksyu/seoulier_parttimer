@@ -339,14 +339,27 @@ function App() {
   // Load shifts
   const loadShifts = async () => {
     try {
-      // Calculate next month for calendar display
+      // Calculate previous and next month for calendar display
       const [year, month] = selectedMonth.split('-');
+      
+      const prevMonth = month === '01' ? '12' : String(parseInt(month) - 1).padStart(2, '0');
+      const prevYear = month === '01' ? String(parseInt(year) - 1) : year;
+      const prevMonthStr = `${prevYear}-${prevMonth}`;
+      
       const nextMonth = month === '12' ? '01' : String(parseInt(month) + 1).padStart(2, '0');
       const nextYear = month === '12' ? String(parseInt(year) + 1) : year;
       const nextMonthStr = `${nextYear}-${nextMonth}`;
       
-      // Fetch both current and next month data
-      const [currentResponse, nextResponse] = await Promise.all([
+      // Fetch previous, current, and next month data
+      const [prevResponse, currentResponse, nextResponse] = await Promise.all([
+        axios.get(`${API_URL}/shifts`, {
+          params: { 
+            userId: user.id, 
+            role: user.role,
+            month: prevMonthStr,
+            staffId: selectedStaff
+          }
+        }),
         axios.get(`${API_URL}/shifts`, {
           params: { 
             userId: user.id, 
@@ -365,9 +378,9 @@ function App() {
         })
       ]);
       
-      if (currentResponse.data.success && nextResponse.data.success) {
-        // Combine both months' data
-        const combinedShifts = [...currentResponse.data.shifts, ...nextResponse.data.shifts];
+      if (prevResponse.data.success && currentResponse.data.success && nextResponse.data.success) {
+        // Combine all three months' data
+        const combinedShifts = [...prevResponse.data.shifts, ...currentResponse.data.shifts, ...nextResponse.data.shifts];
         setShifts(combinedShifts);
       }
     } catch (error) {
@@ -1006,14 +1019,22 @@ function App() {
   // Load admin cleaning statistics
   const loadAdminCleaningStats = async () => {
     try {
-      // Calculate next month for calendar display
+      // Calculate previous and next month for calendar display
       const [year, month] = selectedMonth.split('-');
+      
+      const prevMonth = month === '01' ? '12' : String(parseInt(month) - 1).padStart(2, '0');
+      const prevYear = month === '01' ? String(parseInt(year) - 1) : year;
+      const prevMonthStr = `${prevYear}-${prevMonth}`;
+      
       const nextMonth = month === '12' ? '01' : String(parseInt(month) + 1).padStart(2, '0');
       const nextYear = month === '12' ? String(parseInt(year) + 1) : year;
       const nextMonthStr = `${nextYear}-${nextMonth}`;
       
-      // Fetch both current and next month data
-      const [currentResponse, nextResponse] = await Promise.all([
+      // Fetch previous, current, and next month data
+      const [prevResponse, currentResponse, nextResponse] = await Promise.all([
+        axios.get(`${API_URL}/admin-cleaning-stats`, {
+          params: { month: prevMonthStr }
+        }),
         axios.get(`${API_URL}/admin-cleaning-stats`, {
           params: { month: selectedMonth }
         }),
@@ -1022,9 +1043,9 @@ function App() {
         })
       ]);
       
-      if (currentResponse.data.success && nextResponse.data.success) {
-        // Combine both months' stats
-        const combinedStats = [...currentResponse.data.stats, ...nextResponse.data.stats];
+      if (prevResponse.data.success && currentResponse.data.success && nextResponse.data.success) {
+        // Combine all three months' stats
+        const combinedStats = [...prevResponse.data.stats, ...currentResponse.data.stats, ...nextResponse.data.stats];
         setAdminCleaningStats({
           stats: combinedStats,
           monthlyCompletionRate: currentResponse.data.monthlyCompletionRate || 0,
@@ -1837,10 +1858,24 @@ function App() {
             const weeks = [];
             let currentWeek = [];
             
-            // Add empty cells for days before month starts (Monday = 0)
+            // Add previous month dates for days before month starts (Monday = 0)
             const adjustedFirstDay = firstDay === 0 ? 6 : firstDay - 1;
-            for (let i = 0; i < adjustedFirstDay; i++) {
-              currentWeek.push(null);
+            if (adjustedFirstDay > 0) {
+              const prevMonth = month === '01' ? '12' : String(parseInt(month) - 1).padStart(2, '0');
+              const prevYear = month === '01' ? String(parseInt(year) - 1) : year;
+              const daysInPrevMonth = new Date(prevYear, prevMonth, 0).getDate();
+              
+              for (let i = adjustedFirstDay - 1; i >= 0; i--) {
+                const prevDay = daysInPrevMonth - i;
+                const dateStr = `${prevYear}-${prevMonth}-${String(prevDay).padStart(2, '0')}`;
+                const dayShifts = shiftsMap[dateStr] || [];
+                currentWeek.push({
+                  day: prevDay,
+                  date: dateStr,
+                  shifts: dayShifts,
+                  isPrevMonth: true
+                });
+              }
             }
             
             // Add all days of the month
@@ -1907,7 +1942,7 @@ function App() {
                         return (
                           <div 
                             key={dayIdx} 
-                            className={`calendar-day work-day ${isToday ? 'today' : ''} ${dayData.shifts.length > 0 ? 'has-data' : ''} ${allApproved ? 'all-approved' : ''} ${dayData.isNextMonth ? 'next-month' : ''}`}
+                            className={`calendar-day work-day ${isToday ? 'today' : ''} ${dayData.shifts.length > 0 ? 'has-data' : ''} ${allApproved ? 'all-approved' : ''} ${dayData.isNextMonth ? 'next-month' : ''} ${dayData.isPrevMonth ? 'prev-month' : ''}`}
                             onClick={() => {
                               if (dayData.shifts.length > 0) {
                                 setSelectedWorkDay({
@@ -1917,9 +1952,9 @@ function App() {
                                 setShowWorkDayModal(true);
                               }
                             }}
-                            style={dayData.isNextMonth ? { opacity: 0.4 } : {}}
+                            style={(dayData.isNextMonth || dayData.isPrevMonth) ? { opacity: 0.4 } : {}}
                           >
-                            <div className="day-number" style={dayData.isNextMonth ? { color: '#999' } : {}}>
+                            <div className="day-number" style={(dayData.isNextMonth || dayData.isPrevMonth) ? { color: '#999' } : {}}>
                               {dayData.day}
                               {hasModifiedShifts && <span className="modified-indicator"></span>}
                               {hasLateWorkers && <span className="late-indicator"></span>}
@@ -2499,10 +2534,24 @@ function App() {
                     const weeks = [];
                     let currentWeek = [];
                     
-                    // Add empty cells for days before month starts (Monday = 0)
+                    // Add previous month dates for days before month starts (Monday = 0)
                     const adjustedFirstDay = firstDay === 0 ? 6 : firstDay - 1;
-                    for (let i = 0; i < adjustedFirstDay; i++) {
-                      currentWeek.push(null);
+                    if (adjustedFirstDay > 0) {
+                      const prevMonth = month === '01' ? '12' : String(parseInt(month) - 1).padStart(2, '0');
+                      const prevYear = month === '01' ? String(parseInt(year) - 1) : year;
+                      const daysInPrevMonth = new Date(prevYear, prevMonth, 0).getDate();
+                      
+                      for (let i = adjustedFirstDay - 1; i >= 0; i--) {
+                        const prevDay = daysInPrevMonth - i;
+                        const dateStr = `${prevYear}-${prevMonth}-${String(prevDay).padStart(2, '0')}`;
+                        const stat = statsMap[dateStr];
+                        currentWeek.push({
+                          day: prevDay,
+                          date: dateStr,
+                          stat: stat,
+                          isPrevMonth: true
+                        });
+                      }
                     }
                     
                     // Add all days of the month
@@ -2579,7 +2628,7 @@ function App() {
                                 return (
                                   <div 
                                     key={dayIdx} 
-                                    className={`calendar-day ${isToday ? 'today' : ''} ${dayData.stat ? 'has-data' : 'clickable'} ${dayData.isNextMonth ? 'next-month' : ''}`}
+                                    className={`calendar-day ${isToday ? 'today' : ''} ${dayData.stat ? 'has-data' : 'clickable'} ${dayData.isNextMonth ? 'next-month' : ''} ${dayData.isPrevMonth ? 'prev-month' : ''}`}
                                     onClick={() => {
                                       console.log('Calendar day clicked:', dayData.date);
                                       setSelectedDayDetail({
@@ -2592,9 +2641,9 @@ function App() {
                                       setShowDayDetailModal(true);
                                       console.log('Modal should open now');
                                     }}
-                                    style={dayData.isNextMonth ? { opacity: 0.4 } : {}}
+                                    style={(dayData.isNextMonth || dayData.isPrevMonth) ? { opacity: 0.4 } : {}}
                                   >
-                                    <div className="day-number" style={dayData.isNextMonth ? { color: '#999' } : {}}>
+                                    <div className="day-number" style={(dayData.isNextMonth || dayData.isPrevMonth) ? { color: '#999' } : {}}>
                                       {dayData.day}
                                       {hasEtcItems && <span className="etc-indicator-calendar"></span>}
                                     </div>
