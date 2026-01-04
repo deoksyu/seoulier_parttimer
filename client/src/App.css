@@ -2767,21 +2767,19 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 }
 
 .calendar-day.work-day.all-approved {
-  opacity: 0.5;
-  filter: grayscale(0.3);
+  border: 2px solid #28a745;
 }
 
 .calendar-day.work-day.all-approved:hover {
-  opacity: 0.7;
+  border: 2px solid #218838;
 }
 
 :root.dark-mode .calendar-day.work-day.all-approved {
-  opacity: 0.4;
-  filter: grayscale(0.4);
+  border: 2px solid #40c463;
 }
 
 :root.dark-mode .calendar-day.work-day.all-approved:hover {
-  opacity: 0.6;
+  border: 2px solid #4ade80;
 }
 
 .work-summary {
