@@ -339,18 +339,66 @@ function App() {
   // Load shifts
   const loadShifts = async () => {
     try {
-      // Fetch only current month data
-      const response = await axios.get(`${API_URL}/shifts`, {
-        params: { 
-          userId: user.id, 
-          role: user.role,
-          month: selectedMonth,
-          staffId: selectedStaff
+      // Admin: Load 3 months for calendar display
+      // Staff: Load only current month
+      if (user.role === 'admin') {
+        // Calculate previous and next month for calendar display
+        const [year, month] = selectedMonth.split('-');
+        
+        const prevMonth = month === '01' ? '12' : String(parseInt(month) - 1).padStart(2, '0');
+        const prevYear = month === '01' ? String(parseInt(year) - 1) : year;
+        const prevMonthStr = `${prevYear}-${prevMonth}`;
+        
+        const nextMonth = month === '12' ? '01' : String(parseInt(month) + 1).padStart(2, '0');
+        const nextYear = month === '12' ? String(parseInt(year) + 1) : year;
+        const nextMonthStr = `${nextYear}-${nextMonth}`;
+        
+        // Fetch previous, current, and next month data for calendar
+        const [prevResponse, currentResponse, nextResponse] = await Promise.all([
+          axios.get(`${API_URL}/shifts`, {
+            params: { 
+              userId: user.id, 
+              role: user.role,
+              month: prevMonthStr,
+              staffId: selectedStaff
+            }
+          }),
+          axios.get(`${API_URL}/shifts`, {
+            params: { 
+              userId: user.id, 
+              role: user.role,
+              month: selectedMonth,
+              staffId: selectedStaff
+            }
+          }),
+          axios.get(`${API_URL}/shifts`, {
+            params: { 
+              userId: user.id, 
+              role: user.role,
+              month: nextMonthStr,
+              staffId: selectedStaff
+            }
+          })
+        ]);
+        
+        if (prevResponse.data.success && currentResponse.data.success && nextResponse.data.success) {
+          // Combine all three months' data for calendar display
+          const combinedShifts = [...prevResponse.data.shifts, ...currentResponse.data.shifts, ...nextResponse.data.shifts];
+          setShifts(combinedShifts);
         }
-      });
-      
-      if (response.data.success) {
-        setShifts(response.data.shifts);
+      } else {
+        // Staff: Fetch only current month data
+        const response = await axios.get(`${API_URL}/shifts`, {
+          params: { 
+            userId: user.id, 
+            role: user.role,
+            month: selectedMonth
+          }
+        });
+        
+        if (response.data.success) {
+          setShifts(response.data.shifts);
+        }
       }
     } catch (error) {
       console.error('Failed to load shifts:', error);
