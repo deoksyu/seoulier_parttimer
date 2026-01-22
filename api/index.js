@@ -501,49 +501,7 @@ app.put('/api/shifts/:id/unapprove', async (req, res) => {
 app.put('/api/shifts/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { start_time, end_time, work_hours, late_exempt, late_note } = req.body;
-    
-    // Get shift info to recalculate late status if start_time changed
-    const shiftResult = await query('SELECT user_id, date FROM shifts WHERE id = $1', [id]);
-    const shift = shiftResult.rows[0];
-    
-    let isLate = 0;
-    let lateMinutes = 0;
-    
-    // Recalculate late status if start_time is provided
-    if (shift && start_time) {
-      const userResult = await query('SELECT regular_start_time FROM users WHERE id = $1', [shift.user_id]);
-      const user = userResult.rows[0];
-      
-      if (user && user.regular_start_time) {
-        const regularParts = user.regular_start_time.split(':');
-        const actualParts = start_time.split(':');
-        
-        const regularHour = parseInt(regularParts[0]);
-        const regularMin = parseInt(regularParts[1]);
-        const actualHour = parseInt(actualParts[0]);
-        const actualMin = parseInt(actualParts[1]);
-        
-        const regularMinutes = regularHour * 60 + regularMin;
-        const actualMinutes = actualHour * 60 + actualMin;
-        
-        // 저녁 근무 시간대 (16:00~17:00) 체크
-        if (actualHour === 16) {
-          isLate = 0;
-          lateMinutes = 0;
-        } else if (actualHour >= 17) {
-          // 17:00 이후는 저녁 근무 기준(17:00)으로 지각 계산
-          const eveningStartMinutes = 17 * 60; // 17:00 = 1020분
-          if (actualMinutes > eveningStartMinutes) {
-            isLate = 1;
-            lateMinutes = actualMinutes - eveningStartMinutes;
-          }
-        } else if (actualMinutes > regularMinutes) {
-          isLate = 1;
-          lateMinutes = actualMinutes - regularMinutes;
-        }
-      }
-    }
+    const { start_time, end_time, work_hours } = req.body;
     
     // Auto-calculate work_hours if both start_time and end_time are provided
     let calculatedWorkHours = work_hours;
@@ -553,9 +511,11 @@ app.put('/api/shifts/:id', async (req, res) => {
       console.log(`[Update Shift] Original work_hours: ${work_hours}, Recalculated: ${calculatedWorkHours}`);
     }
     
+    // Update shift while preserving existing late status
+    // 기존 지각 정보(is_late, late_minutes, late_exempt, late_note)는 유지하고 시간과 근무시간만 수정
     await query(
-      'UPDATE shifts SET start_time = $1, end_time = $2, work_hours = $3, is_modified = 1, is_late = $4, late_minutes = $5, late_exempt = $6, late_note = $7 WHERE id = $8',
-      [start_time, end_time, calculatedWorkHours, isLate, lateMinutes, late_exempt || 0, late_note || null, id]
+      'UPDATE shifts SET start_time = $1, end_time = $2, work_hours = $3, is_modified = 1 WHERE id = $4',
+      [start_time, end_time, calculatedWorkHours, id]
     );
     
     res.json({
