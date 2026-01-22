@@ -439,61 +439,22 @@ app.put('/api/shifts/:id', (req, res) => {
   const { id } = req.params;
   const { start_time, end_time, work_hours } = req.body;
   
-  // Get shift info to recalculate late status
-  db.get('SELECT user_id FROM shifts WHERE id = ?', [id], (err, shift) => {
-    if (err) {
-      return res.status(500).json({ success: false, message: 'Database error' });
-    }
-    
-    if (!shift) {
-      return res.status(404).json({ success: false, message: 'Shift not found' });
-    }
-    
-    // Get user's regular start time
-    db.get('SELECT regular_start_time FROM users WHERE id = ?', [shift.user_id], (err, user) => {
+  // Update shift while preserving existing late status
+  // 기존 지각 정보는 유지하고 시간과 근무시간만 수정
+  db.run(
+    'UPDATE shifts SET start_time = ?, end_time = ?, work_hours = ?, is_modified = 1 WHERE id = ?',
+    [start_time, end_time, work_hours, id],
+    (err) => {
       if (err) {
         return res.status(500).json({ success: false, message: 'Database error' });
       }
       
-      let isLate = 0;
-      let lateMinutes = 0;
-      
-      // Recalculate late status based on new start_time
-      if (user && user.regular_start_time && start_time) {
-        const regularParts = user.regular_start_time.split(':');
-        const actualParts = start_time.split(':');
-        
-        const regularHour = parseInt(regularParts[0]);
-        const regularMin = parseInt(regularParts[1]);
-        const actualHour = parseInt(actualParts[0]);
-        const actualMin = parseInt(actualParts[1]);
-        
-        const regularMinutes = regularHour * 60 + regularMin;
-        const actualMinutes = actualHour * 60 + actualMin;
-        
-        if (actualMinutes > regularMinutes) {
-          isLate = 1;
-          lateMinutes = actualMinutes - regularMinutes;
-        }
-      }
-      
-      // Update shift with recalculated late status
-      db.run(
-        'UPDATE shifts SET start_time = ?, end_time = ?, work_hours = ?, is_modified = 1, is_late = ?, late_minutes = ? WHERE id = ?',
-        [start_time, end_time, work_hours, isLate, lateMinutes, id],
-        (err) => {
-          if (err) {
-            return res.status(500).json({ success: false, message: 'Database error' });
-          }
-          
-          res.json({
-            success: true,
-            message: '수정되었습니다'
-          });
-        }
-      );
-    });
-  });
+      res.json({
+        success: true,
+        message: '수정되었습니다'
+      });
+    }
+  );
 });
 
 // Toggle late exempt (지각 면제)
