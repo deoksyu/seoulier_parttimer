@@ -533,22 +533,38 @@ app.put('/api/shifts/:id', (req, res) => {
   const { id } = req.params;
   const { start_time, end_time, work_hours } = req.body;
   
-  // Update shift while preserving existing late status
-  // 기존 지각 정보는 유지하고 시간과 근무시간만 수정
-  db.run(
-    'UPDATE shifts SET start_time = ?, end_time = ?, work_hours = ?, is_modified = 1 WHERE id = ?',
-    [start_time, end_time, work_hours, id],
-    (err) => {
-      if (err) {
-        return res.status(500).json({ success: false, message: 'Database error' });
-      }
-      
-      res.json({
-        success: true,
-        message: '수정되었습니다'
-      });
+  // First, get the current shift data to verify late status is preserved
+  db.get('SELECT is_late, late_minutes, late_exempt FROM shifts WHERE id = ?', [id], (err, beforeData) => {
+    if (err) {
+      console.error('Error fetching shift before update:', err);
+    } else {
+      console.log('Before update - ID:', id, 'is_late:', beforeData?.is_late, 'late_minutes:', beforeData?.late_minutes);
     }
-  );
+    
+    // Update shift while preserving existing late status
+    // 기존 지각 정보는 유지하고 시간과 근무시간만 수정
+    db.run(
+      'UPDATE shifts SET start_time = ?, end_time = ?, work_hours = ?, is_modified = 1 WHERE id = ?',
+      [start_time, end_time, work_hours, id],
+      (err) => {
+        if (err) {
+          return res.status(500).json({ success: false, message: 'Database error' });
+        }
+        
+        // Verify after update
+        db.get('SELECT is_late, late_minutes FROM shifts WHERE id = ?', [id], (err, afterData) => {
+          if (!err) {
+            console.log('After update - ID:', id, 'is_late:', afterData?.is_late, 'late_minutes:', afterData?.late_minutes);
+          }
+          
+          res.json({
+            success: true,
+            message: '수정되었습니다'
+          });
+        });
+      }
+    );
+  });
 });
 
 // Toggle late exempt (지각 면제)
