@@ -93,10 +93,18 @@ function calculateWorkHours(startTime, endTime) {
     
     // 10:00 이전 출근은 10:00으로 보정
     const workStartThreshold = 10 * 60;  // 600분 (10:00)
+    const breakStart = 15 * 60; // 900분 (15:00)
+    const breakEnd = 17 * 60;   // 1020분 (17:00)
     
     if (startMinutes < workStartThreshold) {
       console.log(`[calculateWorkHours] Early clock-in detected: ${startTime} → adjusted to 10:00`);
       startMinutes = workStartThreshold;
+    }
+    
+    // 15:00~17:00 브레이크타임에 출근한 경우 17:00으로 보정
+    if (startMinutes >= breakStart && startMinutes < breakEnd) {
+      console.log(`[calculateWorkHours] Break time clock-in detected: ${startTime} → adjusted to 17:00`);
+      startMinutes = breakEnd; // 17:00으로 보정
     }
     
     // 퇴근도 10:00 이전이면 근무시간 0
@@ -109,16 +117,13 @@ function calculateWorkHours(startTime, endTime) {
     
     console.log(`[calculateWorkHours] Adjusted - start: ${startMinutes}, end: ${endMinutes}, diff: ${diffMinutes}`);
     
-    // 휴게시간 15:00~17:00 (900분~1020분) 체크
-    const breakStart = 15 * 60; // 900
-    const breakEnd = 17 * 60;   // 1020
-    
-    if (startMinutes < breakEnd && endMinutes > breakStart) {
-      const overlapStart = Math.max(startMinutes, breakStart);
-      const overlapEnd = Math.min(endMinutes, breakEnd);
-      const overlapMinutes = overlapEnd - overlapStart;
-      console.log(`[calculateWorkHours] Break time overlap: ${overlapMinutes} minutes`);
-      diffMinutes -= overlapMinutes;
+    // 휴게시간 15:00~17:00 제외 로직
+    // 단, 출근 시간이 이미 17:00 이후로 보정된 경우는 제외 불필요
+    // 10:00~15:00 사이에 출근하고 17:00 이후에 퇴근한 경우만 휴게시간 제외
+    if (startMinutes < breakStart && endMinutes > breakEnd) {
+      const breakDuration = breakEnd - breakStart; // 120분 (2시간)
+      console.log(`[calculateWorkHours] Excluding break time: ${breakDuration} minutes`);
+      diffMinutes -= breakDuration;
     }
     
     const hours = Math.floor(diffMinutes / 60);
@@ -231,9 +236,9 @@ app.post('/api/clock-in', async (req, res) => {
       
       console.log('Regular minutes:', regularMinutes, 'Actual minutes:', actualMinutes);
       
-      // 저녁 근무 시간대 (16:00~17:00) 체크
-      if (actualHour === 16) {
-        console.log('Evening shift (16:00~17:00) - No late check');
+      // 브레이크타임 (15:00~17:00) 체크 - 출근 시간은 그대로 기록, 지각만 안 함
+      if (actualHour === 15 || actualHour === 16) {
+        console.log('Break time (15:00~17:00) - No late check, work hours calculated from 17:00');
         isLate = 0;
         lateMinutes = 0;
       } else if (actualHour >= 17) {
@@ -511,12 +516,73 @@ app.put('/api/shifts/:id', async (req, res) => {
       console.log(`[Update Shift] Original work_hours: ${work_hours}, Recalculated: ${calculatedWorkHours}`);
     }
     
-    // Update shift while preserving existing late status
-    // 기존 지각 정보(is_late, late_minutes, late_exempt, late_note)는 유지하고 시간과 근무시간만 수정
-    await query(
-      'UPDATE shifts SET start_time = $1, end_time = $2, work_hours = $3, is_modified = 1 WHERE id = $4',
-      [start_time, end_time, calculatedWorkHours, id]
-    );
+    // 출근 시간이 수정되면 지각 정보도 재계산
+    let isLate = null;
+    let lateMinutes = null;
+    
+    if (start_time) {
+      // 해당 shift의 user_id와 regular_start_time 조회
+      const shiftResult = await query(
+        'SELECT s.user_id, u.regular_start_time FROM shifts s JOIN users u ON s.user_id = u.id WHERE s.id = $1',
+        [id]
+      );
+      
+      if (shiftResult.rows.length > 0) {
+        const shift = shiftResult.rows[0];
+        const regularStartTime = shift.regular_start_time;
+        
+        if (regularStartTime) {
+          const actualParts = start_time.split(':');
+          const actualHour = parseInt(actualParts[0]);
+          const actualMin = parseInt(actualParts[1]);
+          const actualMinutes = actualHour * 60 + actualMin;
+          
+          const regularParts = regularStartTime.split(':');
+          const regularHour = parseInt(regularParts[0]);
+          const regularMin = parseInt(regularParts[1]);
+          const regularMinutes = regularHour * 60 + regularMin;
+          
+          // 브레이크타임 (15:00~17:00) 체크
+          if (actualHour === 15 || actualHour === 16) {
+            console.log('[Update] Break time - no late check');
+            isLate = 0;
+            lateMinutes = 0;
+          } else if (actualHour >= 17) {
+            // 17:00 이후는 저녁 근무 기준
+            const eveningStartMinutes = 17 * 60;
+            if (actualMinutes > eveningStartMinutes) {
+              isLate = 1;
+              lateMinutes = actualMinutes - eveningStartMinutes;
+              console.log('[Update] Late for evening shift:', lateMinutes);
+            } else {
+              isLate = 0;
+              lateMinutes = 0;
+            }
+          } else if (actualMinutes > regularMinutes) {
+            isLate = 1;
+            lateMinutes = actualMinutes - regularMinutes;
+            console.log('[Update] Late:', lateMinutes);
+          } else {
+            isLate = 0;
+            lateMinutes = 0;
+          }
+        }
+      }
+    }
+    
+    // Update shift - 지각 정보도 함께 업데이트
+    if (isLate !== null) {
+      await query(
+        'UPDATE shifts SET start_time = $1, end_time = $2, work_hours = $3, is_late = $4, late_minutes = $5, is_modified = 1 WHERE id = $6',
+        [start_time, end_time, calculatedWorkHours, isLate, lateMinutes, id]
+      );
+    } else {
+      // 출근 시간 변경이 없으면 기존 로직 유지
+      await query(
+        'UPDATE shifts SET start_time = $1, end_time = $2, work_hours = $3, is_modified = 1 WHERE id = $4',
+        [start_time, end_time, calculatedWorkHours, id]
+      );
+    }
     
     res.json({
       success: true,
