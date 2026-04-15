@@ -1729,6 +1729,8 @@ function App() {
                 <option value="서울역 주방">서울역 주방</option>
                 <option value="목동 홀">목동 홀</option>
                 <option value="목동 주방">목동 주방</option>
+                <option value="십이율 홀">십이율 홀</option>
+                <option value="십이율 주방">십이율 주방</option>
               </select>
             </div>
 
@@ -1796,7 +1798,8 @@ function App() {
                       <td>{emp.position || '직원'}</td>
                       <td style={{
                         color: emp.workplace?.includes('목동') ? '#8b5cf6' : 
-                               emp.workplace?.includes('서울역') ? '#3b82f6' : 'inherit',
+                               emp.workplace?.includes('서울역') ? '#3b82f6' : 
+                               emp.workplace?.includes('십이율') ? '#f59e0b' : 'inherit',
                         fontWeight: '500'
                       }}>
                         {emp.workplace || '서울역 홀'}
@@ -1956,6 +1959,8 @@ function App() {
                               <option value="서울역 주방">서울역 주방</option>
                               <option value="목동 홀">목동 홀</option>
                               <option value="목동 주방">목동 주방</option>
+                              <option value="십이율 홀">십이율 홀</option>
+                              <option value="십이율 주방">십이율 주방</option>
                             </select>
                           </div>
                         </div>
@@ -2266,6 +2271,8 @@ function App() {
                       <option value="서울역 주방">서울역 주방</option>
                       <option value="목동 홀">목동 홀</option>
                       <option value="목동 주방">목동 주방</option>
+                      <option value="십이율 홀">십이율 홀</option>
+                      <option value="십이율 주방">십이율 주방</option>
                     </select>
                   </div>
                   <div>
