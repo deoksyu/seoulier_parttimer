@@ -68,9 +68,11 @@ const getCurrentTimeKST = () => {
 };
 
 // Calculate work hours
-function calculateWorkHours(startTime, endTime) {
+// regularStartTime: 직원 개인별 정규 출근시간 ('HH:mm' 등). 없거나 파싱 실패 시 10:00을 기본값으로 사용.
+//   이 시각 이전 출근은 카운트 시작 기준이 이 시각으로 보정됨 (실제 출근 기록 자체는 변경되지 않음).
+function calculateWorkHours(startTime, endTime, regularStartTime = null) {
   try {
-    console.log(`[calculateWorkHours] Input - start: ${startTime}, end: ${endTime}`);
+    console.log(`[calculateWorkHours] Input - start: ${startTime}, end: ${endTime}, regularStartTime: ${regularStartTime}`);
     
     // Handle both HH:mm:ss and HH:mm formats
     const startParts = startTime.split(':');
@@ -91,13 +93,23 @@ function calculateWorkHours(startTime, endTime) {
     let startMinutes = startHour * 60 + startMin;
     let endMinutes = endHour * 60 + endMin;
     
-    // 10:00 이전 출근은 10:00으로 보정
-    const workStartThreshold = 10 * 60;  // 600분 (10:00)
+    // 근무시간 카운트 시작 기준 = 직원 개인별 정규 출근시간 (regular_start_time).
+    // 미설정이거나 형식이 잘못된 경우에만 기존 기본값 10:00을 사용 (기존 동작과 동일하게 유지).
+    const DEFAULT_WORK_START_THRESHOLD = 10 * 60; // 600분 (10:00)
+    let workStartThreshold = DEFAULT_WORK_START_THRESHOLD;
+    if (regularStartTime) {
+      const regularParts = String(regularStartTime).split(':');
+      const regularHour = parseInt(regularParts[0], 10);
+      const regularMin = parseInt(regularParts[1], 10);
+      if (!isNaN(regularHour) && !isNaN(regularMin)) {
+        workStartThreshold = regularHour * 60 + regularMin;
+      }
+    }
     const breakStart = 15 * 60; // 900분 (15:00)
     const breakEnd = 17 * 60;   // 1020분 (17:00)
     
     if (startMinutes < workStartThreshold) {
-      console.log(`[calculateWorkHours] Early clock-in detected: ${startTime} → adjusted to 10:00`);
+      console.log(`[calculateWorkHours] Early clock-in detected: ${startTime} → adjusted to ${String(Math.floor(workStartThreshold / 60)).padStart(2, '0')}:${String(workStartThreshold % 60).padStart(2, '0')}`);
       startMinutes = workStartThreshold;
     }
     
@@ -107,9 +119,9 @@ function calculateWorkHours(startTime, endTime) {
       startMinutes = breakEnd; // 17:00으로 보정
     }
     
-    // 퇴근도 10:00 이전이면 근무시간 0
+    // 퇴근도 카운트 시작 기준 이전이면 근무시간 0
     if (endMinutes < workStartThreshold) {
-      console.log(`[calculateWorkHours] Clock-out before 10:00: work hours = 0`);
+      console.log(`[calculateWorkHours] Clock-out before threshold: work hours = 0`);
       return 0;
     }
     
@@ -318,8 +330,12 @@ app.post('/api/clock-out', async (req, res) => {
     const shift = result.rows[0];
     console.log(`Found active shift - shiftId: ${shift.id}, start_time: ${shift.start_time}`);
     
-    const workHours = calculateWorkHours(shift.start_time, time);
-    console.log(`Calculated work hours: ${workHours}`);
+    // 근무시간 카운트 시작 기준 = 개인별 정규 출근시간 (없으면 calculateWorkHours 내부 기본값 10:00 사용)
+    const userTimeResult = await query('SELECT regular_start_time FROM users WHERE id = $1', [userId]);
+    const regularStartTime = userTimeResult.rows[0]?.regular_start_time;
+    
+    const workHours = calculateWorkHours(shift.start_time, time, regularStartTime);
+    console.log(`Calculated work hours: ${workHours} (regularStartTime: ${regularStartTime})`);
     
     await query(
       'UPDATE shifts SET end_time = $1, work_hours = $2 WHERE id = $3',
@@ -411,12 +427,12 @@ app.post('/api/shifts/manual', async (req, res) => {
       return res.status(400).json({ success: false, message: '해당 날짜에 이미 출근 기록이 있습니다' });
     }
     
-    // Calculate work hours
-    const workHours = calculateWorkHours(start_time, end_time);
-    
-    // Get user's regular start time for late check
-    const userResult = await query('SELECT regular_start_time FROM users WHERE id = $1', [user_id]);
+    // Get user's regular start time for late check / 근무시간 카운트 기준
+    const userResult = await query('SELECT regular_start_time, position FROM users WHERE id = $1', [user_id]);
     const user = userResult.rows[0];
+    
+    // Calculate work hours (개인별 정규 출근시간 기준, 미설정 시 10:00 기본값)
+    const workHours = calculateWorkHours(start_time, end_time, user?.regular_start_time);
     
     let isLate = 0;
     let lateMinutes = 0;
@@ -508,30 +524,35 @@ app.put('/api/shifts/:id', async (req, res) => {
     const { id } = req.params;
     const { start_time, end_time, work_hours } = req.body;
     
-    // Auto-calculate work_hours if both start_time and end_time are provided
-    let calculatedWorkHours = work_hours;
-    if (start_time && end_time) {
-      console.log(`[Update Shift] Recalculating work hours - start: ${start_time}, end: ${end_time}`);
-      calculatedWorkHours = calculateWorkHours(start_time, end_time);
-      console.log(`[Update Shift] Original work_hours: ${work_hours}, Recalculated: ${calculatedWorkHours}`);
-    }
-    
-    // 출근 시간이 수정되면 지각 정보도 재계산
-    let isLate = null;
-    let lateMinutes = null;
-    
+    // 출근 시간이 있으면 user_id/regular_start_time을 먼저 한 번만 조회
+    // (근무시간 재계산의 카운트 기준 + 지각 재계산의 정규 출근시간 판단에 공용으로 사용)
+    let shiftUser = null;
     if (start_time) {
-      // 해당 shift의 user_id와 regular_start_time 조회
       const shiftResult = await query(
         'SELECT s.user_id, u.regular_start_time FROM shifts s JOIN users u ON s.user_id = u.id WHERE s.id = $1',
         [id]
       );
-      
       if (shiftResult.rows.length > 0) {
-        const shift = shiftResult.rows[0];
-        const regularStartTime = shift.regular_start_time;
-        
-        if (regularStartTime) {
+        shiftUser = shiftResult.rows[0];
+      }
+    }
+    
+    // Auto-calculate work_hours if both start_time and end_time are provided
+    let calculatedWorkHours = work_hours;
+    if (start_time && end_time) {
+      console.log(`[Update Shift] Recalculating work hours - start: ${start_time}, end: ${end_time}, regularStartTime: ${shiftUser?.regular_start_time}`);
+      calculatedWorkHours = calculateWorkHours(start_time, end_time, shiftUser?.regular_start_time);
+      console.log(`[Update Shift] Original work_hours: ${work_hours}, Recalculated: ${calculatedWorkHours}`);
+    }
+    
+    // 출근 시간이 수정되면 지각 정보도 재계산 (기존 로직 그대로 - 정규출근시간 기준 유지)
+    let isLate = null;
+    let lateMinutes = null;
+    
+    if (shiftUser) {
+      const regularStartTime = shiftUser.regular_start_time;
+      
+      if (regularStartTime) {
           const actualParts = start_time.split(':');
           const actualHour = parseInt(actualParts[0]);
           const actualMin = parseInt(actualParts[1]);
@@ -566,7 +587,6 @@ app.put('/api/shifts/:id', async (req, res) => {
             isLate = 0;
             lateMinutes = 0;
           }
-        }
       }
     }
     
